@@ -9,6 +9,7 @@ class BinomialDistribution{
     constructor(trials, p){
         this.trials = trials;
         this.p = p;
+        this.f = []
     }
 
     //compute the factorial of a number, indexing the result to use later
@@ -26,14 +27,14 @@ class BinomialDistribution{
         }
         //calculate the average number of succesful wounds
         average(){
-            return this.numDice * this.combinedChance
+            return this.trials * this.p
         }
         //calculate the probability of getting a specific number of succesful wounds
         pdf(x){
-            if(x < 0 || x > this.numDice){
-                return 0;
+            if(x < 0 || x > this.trials){
+                return -1;
             }
-            return this.nCr(this.numDice,x) * (this.combinedChance**x) * (1-this.combinedChance)**(this.numDice-x)
+            return this.nCr(this.trials,x) * (this.p**x) * (1-this.p)**(this.trials-x)
         }
         //get the nth coefficent for the continued fraction used in incompleteBeta()
         getCoeff(n,x,a,b){
@@ -72,20 +73,35 @@ class BinomialDistribution{
             return output * 1/(1+continuedF) * 1/this.beta(a,b,20000);
         }
 }
+//https://en.wikipedia.org/wiki/Poisson_binomial_distribution
+//works acording to test from https://github.com/tsakim/poibin/blob/master/test_poibin.py
+class PoissonBinomialDist{
+    pdfList = [1]
+    constructor(probs){
+        this.probs = probs;
+    }
+
+    generatePDF(){
+        for(var i = 1; i <= this.probs.length; i++){
+            var nextPdfList = Array(i+1).fill(0)
+            nextPdfList[0] = (1-this.probs[i-1]) * this.pdfList[0]
+            nextPdfList[i] = this.probs[i-1] * this.pdfList[i-1]
+            for(var k = 1; k <= i - 1; k++){
+                nextPdfList[k] = this.probs[i-1] * this.pdfList[k-1] + (1-this.probs[i-1]) * this.pdfList[k]
+            }
+            this.pdfList = nextPdfList;
+        }
+        console.log("Done!")
+    }
+
+    pdf(x){
+        return this.pdfList[x];
+    }
+}
 
 //TODO: invetigate slight difference in CDF between desmos and code
 //create a distribution for a warhammer combat where you roll *numDice* dice that hit on *toHit*, wound on *toWound* versus an armor save of *armorSave*
 class DiceDistribution{
-    constructor(numDice,diceSides,toHit,toWound,armorSave){
-        this.numDice = numDice;
-        this.diceSides = diceSides;
-        this.hitChance = (diceSides-toHit+1)/diceSides;
-        this.woundChance = (diceSides-toWound+1)/diceSides;
-        this.armorFailChance = (armorSave-1)/diceSides;
-        this.combinedChance = this.hitChance * this.woundChance * this.armorFailChance;
-        this.f = [];
-        this.biDist = new BinomialDistribution(numDice,this.combinedChance)
-    }
 
     //alternative constructor that just takes the combined chance as a parameter
     constructor(numDice,diceSides,combinedChance){
@@ -114,12 +130,23 @@ class DiceDistribution{
 
 }
 
-var test = new DiceDistribution(24,6,2,2,3)
-console.time("first")
-test.cdf(24)
-console.timeEnd("first")
+function createCombatDist(numDice,diceSides,toHit,toWound,armorSave){
+    var combinedChance = (armorSave-1)/diceSides * (diceSides-toWound+1)/diceSides * (diceSides-toHit+1)/diceSides;
+    return new DiceDistribution(numDice,diceSides,combinedChance) 
+}
+
+var poiTest = new PoissonBinomialDist([0.4163448, 0.3340270, 0.9689613]) //new PoissonBinomialDist([3/6,3/6,1/6,1/6])
+poiTest.generatePDF();
+for(var i = 0; i <= 3; i++){
+    console.log(poiTest.pdf(i))
+}
+
+/*
+var test = createCombatDist(24,6,2,2,3)
+var cdfPoints = []
 for(var i = 0; i <= 24; i++){
-    console.log("Probability of " + i + ":" + test.pdf(i))
+    console.log("Probability of " + i + ":" + test.biDist.pdf(i))
+    cdfPoints.push(test.cdf(i))
     console.log("Calculated CDF of " + i + ":" + test.cdf(i))
 }
 
@@ -172,3 +199,4 @@ svg.append('g')
   .attr("cy", function (d) { return d[1] } )
   .attr("r", 3)
   .style("fill", "Red");
+*/
