@@ -6,10 +6,26 @@
 
 //generic BinomialDistribution class for probability usage
 class BinomialDistribution{
+
+
     constructor(trials, p){
         this.trials = trials;
         this.p = p;
-        this.f = []
+        this.f = [1,1]
+        this.lf = [0,0]
+    }
+
+    logFactorial(n){
+        if(n < 0){
+            return 0;
+        }
+        
+        if ( n == 0 || n == 1){
+            return 0;
+        }
+        if (this.lf[n] > 0)
+            return this.lf[n];
+        return this.lf[n] = this.logFactorial(n-1) + Math.log(n);
     }
 
     //compute the factorial of a number, indexing the result to use later
@@ -20,10 +36,12 @@ class BinomialDistribution{
         if (this.f[n] > 0)
             return this.f[n];
         return this.f[n] = this.factorial(n-1) * n;
-        }
+    }
+
         //calcualte N Choose R
         nCr(n,r){
-            return this.factorial(n)/(this.factorial(r) * this.factorial(n-r))
+            return Math.exp(this.logFactorial(n) - (this.logFactorial(r) + this.logFactorial(n-r)))
+            //return this.factorial(n)/(this.factorial(r) * this.factorial(n-r))
         }
         //calculate the average number of succesful wounds
         average(){
@@ -72,6 +90,26 @@ class BinomialDistribution{
             }
             return output * 1/(1+continuedF) * 1/this.beta(a,b,20000);
         }
+        
+        toInt(t,k){
+            return (t**(this.trials - k - 1)) * (1-t)**k
+        }
+
+        cdf(x){
+            if(x < 0){
+                return 0;
+            }
+            var output = (this.trials - x) * this.nCr(this.trials,x)
+            var integral = 0;
+
+            for(var i = 0; i < (1 - this.p); i+=.001){
+                //integral += this.toInt(this.evals[i][0],x) * this.evals[i][1]
+                //integral += this.toInt(-1 * this.evals[i][0],x) * this.evals[i][1]
+                integral += .001 * this.toInt(i,x)
+            }
+
+            return output * integral;
+        }
 }
 //https://en.wikipedia.org/wiki/Poisson_binomial_distribution
 //works acording to test from https://github.com/tsakim/poibin/blob/master/test_poibin.py
@@ -113,6 +151,7 @@ class DiceDistribution{
 
     //calculate the percentage of getting x or more succesful wounds
     cdf(x){
+        //return 1-this.biDist.cdf(x-1)
         var a = this.numDice - x + 1;
         var b = x;
         var n = 1 - this.combinedChance;
@@ -135,19 +174,22 @@ function createCombatDist(numDice,diceSides,toHit,toWound,armorSave){
     return new DiceDistribution(numDice,diceSides,combinedChance) 
 }
 
-var poiTest = new PoissonBinomialDist([0.4163448, 0.3340270, 0.9689613]) //new PoissonBinomialDist([3/6,3/6,1/6,1/6])
-poiTest.generatePDF();
-for(var i = 0; i <= 3; i++){
-    console.log(poiTest.pdf(i))
-}
+//var poiTest = new PoissonBinomialDist([0.4163448, 0.3340270, 0.9689613]) //new PoissonBinomialDist([3/6,3/6,1/6,1/6])
+//poiTest.generatePDF();
+//for(var i = 0; i <= 3; i++){
+//    console.log(poiTest.pdf(i))
+//}
 
-/*
+
 var test = createCombatDist(24,6,2,2,3)
 var cdfPoints = []
 for(var i = 0; i <= 24; i++){
-    console.log("Probability of " + i + ":" + test.biDist.pdf(i))
+    //console.log("Probability of " + i + ":" + test.biDist.pdf(i))
     cdfPoints.push(test.cdf(i))
-    console.log("Calculated CDF of " + i + ":" + test.cdf(i))
+    console.log("Calculated CDF of " + i + ":" + test.cdf(i) + "\n")
+    console.log("Calculated CDF using integral estimate" + (1-test.biDist.cdf(i-1)))
+    console.log("Error: " + Math.abs(test.cdf(i) - (1-test.biDist.cdf(i-1))))
+    console.log("")
 }
 
 //console.log(JSON.stringify(test.sampleCdf(.1)))
@@ -199,4 +241,3 @@ svg.append('g')
   .attr("cy", function (d) { return d[1] } )
   .attr("r", 3)
   .style("fill", "Red");
-*/
