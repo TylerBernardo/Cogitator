@@ -1,8 +1,13 @@
 //Tyler Bernardo, September 2024
 
 //TODO:
-//modifers to dice
-//rerolls? exploding 6's? lethal hits?
+//Use riemman sum(or better numerical integration technique) for use in cdf
+//implement the log_gamma function as an alternative to logFactorial. This allows the riemman sum to actually be used in the cdf (log_gamma allows nCr to be extended to R)
+//clamp output of CDF to account for slight numerical errors
+//write testing tools
+// * tool that runs simulations and then compares results to the distribution, outputting the mean error over all outcomes
+// * tool that adjusts iterations of aproximations to determine accuracy and runtime impact of certain combinations. Can use this to find when upping parameters just isnt worth it
+
 
 //generic BinomialDistribution class for probability usage
 class BinomialDistribution{
@@ -15,7 +20,17 @@ class BinomialDistribution{
         this.lf = [0,0]
     }
 
+    logGamma(x){
+        var result = -x * 0.57721566490153286060651209008240243;
+        for(var k = 1; k < 20000; k++){
+            result += (x/k)-Math.log(1+(x/k))
+        }
+        return result;
+    }
+
     logFactorial(n){
+        //return this.logGamma(n)
+        
         if(n < 0){
             return 0;
         }
@@ -26,6 +41,7 @@ class BinomialDistribution{
         if (this.lf[n] > 0)
             return this.lf[n];
         return this.lf[n] = this.logFactorial(n-1) + Math.log(n);
+        
     }
 
     //compute the factorial of a number, indexing the result to use later
@@ -78,17 +94,17 @@ class BinomialDistribution{
         //https://jamesmccaffrey.wordpress.com/2022/07/01/computing-the-incomplete-beta-function-from-scratch-in-excel/
         //calculate the beta(a,b,n) using a continued fraction
         incompleteBeta(a,b,n){
-            if(n > (a+1)/(a+b+2)){
+            if( b != 0 && n > (a+1)/(a+b+2)){
                 return 1 - this.incompleteBeta(b,a,1-n);
             }
             //calculate the part before the continued fraction
             var output = ((n**a) * ((1-n)**b))/a
-            var ITERATIONS = 1000;
+            var ITERATIONS = 10;
             var continuedF = this.getCoeff(ITERATIONS,n,a,b)
             for(var i = ITERATIONS-1; i >=1; i--){
                 continuedF = this.getCoeff(i,n,a,b) /(1+continuedF);
             }
-            return output * 1/(1+continuedF) * 1/this.beta(a,b,20000);
+            return output * 1/(1+continuedF) * 1/this.beta(a,b,10000);
         }
         
         toInt(t,k){
@@ -102,10 +118,10 @@ class BinomialDistribution{
             var output = (this.trials - x) * this.nCr(this.trials,x)
             var integral = 0;
 
-            for(var i = 0; i < (1 - this.p); i+=.001){
+            for(var i = 0; i < (1 - this.p); i+=.0001){
                 //integral += this.toInt(this.evals[i][0],x) * this.evals[i][1]
                 //integral += this.toInt(-1 * this.evals[i][0],x) * this.evals[i][1]
-                integral += .001 * this.toInt(i,x)
+                integral += .0001 * this.toInt(i,x)
             }
 
             return output * integral;
@@ -151,6 +167,9 @@ class DiceDistribution{
 
     //calculate the percentage of getting x or more succesful wounds
     cdf(x){
+        if(x == 0){
+            return 1
+        }
         //return 1-this.biDist.cdf(x-1)
         var a = this.numDice - x + 1;
         var b = x;
@@ -160,11 +179,15 @@ class DiceDistribution{
     
     //sample points from the cdf function that are each space *deltaX* from eachother. The coordinates are shifted for the graphing library
     sampleCdf(deltaX){
-        var points = []
+        var pointsx = []
+        var pointsy = []
         for(var x = 0; x <= 24; x+=deltaX){
-            points.push([420*x/24,420-420*this.cdf(x)]);
+            //points.push([x,this.cdf(x)]);
+            //points.push([420*x/24,420-420*(1-this.biDist.cdf(x))]);
+            pointsx.push(x)
+            pointsy.push(this.cdf(x))
         }
-        return points;
+        return [pointsx,pointsy];
     }
 
 }
@@ -174,6 +197,44 @@ function createCombatDist(numDice,diceSides,toHit,toWound,armorSave){
     return new DiceDistribution(numDice,diceSides,combinedChance) 
 }
 
+function testDistribution(dist,iterations){
+    var results = Array(dist.numDice+1).fill(0)
+    for(var i = 0; i < iterations; i++){
+        var passes = 0;
+        for(var d = 0; d < dist.numDice; d++){
+            var roll = Math.random();
+            if(roll <= dist.combinedChance){
+                passes++;
+            }
+        }
+        results[passes] += 1/iterations;
+    }
+    var averageError = 0;
+    for(var i = 0; i < dist.numDice/2; i++){
+        var cdf = 0;
+        for(var j = i; j < dist.numDice; j++){
+            cdf += results[j]
+        }
+        results[i] = 2*Math.abs(cdf - dist.cdf(i))/dist.numDice
+        averageError += results[i]
+    }
+    return averageError;
+}
+
+function testNTimes(numDice,n){
+    var average = 0;
+    for(var i = 0; i < n; i++){
+        var toHit = Math.floor(Math.random() * (6 - 2) + 2)
+        var toWound = Math.floor(Math.random() * (6 - 2) + 2);
+        var armorSave = Math.floor(Math.random() * (6 - 2) + 2)
+        var dist = createCombatDist(numDice,6,toHit,toWound,armorSave)
+        var error = testDistribution(dist,300000)
+        console.log("The error for hitting on " + toHit + ", wounding on " + toWound + ", and saving on " + armorSave + " is " + error)
+        average += error/n;
+    }
+    return average;
+}
+
 //var poiTest = new PoissonBinomialDist([0.4163448, 0.3340270, 0.9689613]) //new PoissonBinomialDist([3/6,3/6,1/6,1/6])
 //poiTest.generatePDF();
 //for(var i = 0; i <= 3; i++){
@@ -181,63 +242,49 @@ function createCombatDist(numDice,diceSides,toHit,toWound,armorSave){
 //}
 
 
-var test = createCombatDist(24,6,2,2,3)
+var test = createCombatDist(24,6,3,5,2)
 var cdfPoints = []
 for(var i = 0; i <= 24; i++){
     //console.log("Probability of " + i + ":" + test.biDist.pdf(i))
     cdfPoints.push(test.cdf(i))
     console.log("Calculated CDF of " + i + ":" + test.cdf(i) + "\n")
-    console.log("Calculated CDF using integral estimate" + (1-test.biDist.cdf(i-1)))
-    console.log("Error: " + Math.abs(test.cdf(i) - (1-test.biDist.cdf(i-1))))
+    //console.log("Calculated CDF using integral estimate" + (1-test.biDist.cdf(i-1)))
+    ///console.log("Error: " + Math.abs(test.cdf(i) - (1-test.biDist.cdf(i-1))))
     console.log("")
 }
 
+//console.log(testDistribution(test,100000))
+//console.log(testNTimes(24,50))
+
+
+var dataToGraph = test.sampleCdf(.25);
+
+var myChart = new Chart(
+    document.getElementById("cdfGraph"),
+    {
+        type:"line",
+        data:{
+            datasets: [{
+              data: dataToGraph[1]
+            }],
+
+            labels: dataToGraph[0]
+        },
+        scales:{
+            x:{
+                min:0,
+                max:24,
+                ticks:{
+                    stepSize:1,
+                    beginAtZero:true,
+                    precision:0
+                }
+            }
+        }
+    }
+)
+
+console.log(myChart)
+
 //console.log(JSON.stringify(test.sampleCdf(.1)))
 
-// Set Dimensions
-const xSize = 500; 
-const ySize = 500;
-const margin = 40;
-const xMax = xSize - margin*2;
-const yMax = ySize - margin*2;
-
-// Create Random Points
-console.time("createData")
-const data = test.sampleCdf(.01);
-console.timeEnd("createData")
-console.log(data)
-const numPoints = data.length;
-console.log(numPoints)
-
-// Append SVG Object to the Page
-const svg = d3.select("#myPlot")
-  .append("svg")
-  .append("g")
-  .attr("transform","translate(" + margin + "," + margin + ")");
-
-// X Axis
-const x = d3.scaleLinear()
-  .domain([0, 24])
-  .range([0, xMax]);
-
-svg.append("g")
-  .attr("transform", "translate(0," + yMax + ")")
-  .call(d3.axisBottom(x));
-
-// Y Axis
-const y = d3.scaleLinear()
-  .domain([0, 1])
-  .range([ yMax, 0]);
-
-svg.append("g")
-  .call(d3.axisLeft(y));
-
-// Dots
-svg.append('g')
-  .selectAll("dot")
-  .data(data).enter()
-  .append("circle")
-  .attr("cx", function (d) { return d[0] } )
-  .attr("cy", function (d) { return d[1] } )
-  .attr("r", 3)
-  .style("fill", "Red");
