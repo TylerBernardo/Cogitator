@@ -1,12 +1,10 @@
 //Tyler Bernardo, September 2024
 
 //TODO:
-//Use riemman sum(or better numerical integration technique) for use in cdf
-//implement the log_gamma function as an alternative to logFactorial. This allows the riemman sum to actually be used in the cdf (log_gamma allows nCr to be extended to R)
-//clamp output of CDF to account for slight numerical errors
 //write testing tools
 // * tool that runs simulations and then compares results to the distribution, outputting the mean error over all outcomes
 // * tool that adjusts iterations of aproximations to determine accuracy and runtime impact of certain combinations. Can use this to find when upping parameters just isnt worth it
+//large attack counts seem to diverge from expected results. the ammount of iterations needed seems to scale with the number of attacks. Write code to gather data to figure out how the error grows, since increasing iterations by a factor of N divides the error by N
 
 
 //generic BinomialDistribution class for probability usage
@@ -99,12 +97,12 @@ class BinomialDistribution{
             }
             //calculate the part before the continued fraction
             var output = ((n**a) * ((1-n)**b))/a
-            var ITERATIONS = 10;
+            var ITERATIONS = 100;
             var continuedF = this.getCoeff(ITERATIONS,n,a,b)
             for(var i = ITERATIONS-1; i >=1; i--){
                 continuedF = this.getCoeff(i,n,a,b) /(1+continuedF);
             }
-            return output * 1/(1+continuedF) * 1/this.beta(a,b,10000);
+            return output * 1/(1+continuedF) * 1/this.beta(a,b,20000*Math.round(this.trials/24));
         }
         
         toInt(t,k){
@@ -181,7 +179,7 @@ class DiceDistribution{
     sampleCdf(deltaX){
         var pointsx = []
         var pointsy = []
-        for(var x = 0; x <= 24; x+=deltaX){
+        for(var x = 0; x <= this.numDice; x+=deltaX){
             //points.push([x,this.cdf(x)]);
             //points.push([420*x/24,420-420*(1-this.biDist.cdf(x))]);
             pointsx.push(x)
@@ -242,7 +240,7 @@ function testNTimes(numDice,n){
 //}
 
 
-var test = createCombatDist(24,6,3,5,2)
+var test = createCombatDist(24,6,3,4,3)
 var cdfPoints = []
 for(var i = 0; i <= 24; i++){
     //console.log("Probability of " + i + ":" + test.biDist.pdf(i))
@@ -254,37 +252,80 @@ for(var i = 0; i <= 24; i++){
 }
 
 //console.log(testDistribution(test,100000))
-//console.log(testNTimes(24,50))
 
+//console.log(testNTimes(100,50))
 
-var dataToGraph = test.sampleCdf(.25);
+function woundRoll(s,t){
+    if(s >= 2 * t){
+        return 2;
+    }
 
-var myChart = new Chart(
-    document.getElementById("cdfGraph"),
-    {
-        type:"line",
-        data:{
-            datasets: [{
-              data: dataToGraph[1]
-            }],
+    if(s > t){
+        return 3;
+    }
 
-            labels: dataToGraph[0]
-        },
-        scales:{
-            x:{
-                min:0,
-                max:24,
-                ticks:{
-                    stepSize:1,
-                    beginAtZero:true,
-                    precision:0
+    if(s == t){
+        return 4
+    }
+
+    if(s * 2 <= t){
+        return 6
+    }
+
+    return 5;
+}
+
+var currentGraph = null;
+
+function createGraph(){
+    if(currentGraph != null){
+        currentGraph.destroy()
+    }
+    var attacks = parseInt(document.getElementById("fAttacks").value)
+    var ws = parseInt(document.getElementById("fWS").value)
+    var armorSave = Math.min(parseInt(document.getElementById("tSave").value) + parseInt(document.getElementById("fAP").value),7)
+    var toWound = woundRoll(parseInt(document.getElementById("fStrength").value),parseInt(document.getElementById("tToughness").value))
+    console.log(toWound)
+
+    var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave)
+    var dataToGraph = distToGraph.sampleCdf(.25);
+
+    var myChart = new Chart(
+        document.getElementById("cdfGraph"),
+        {
+            type:"line",
+            data:{
+                datasets: [{
+                data: dataToGraph[1]
+                }],
+
+                labels: dataToGraph[0]
+            },
+            options:{
+                scales:{
+                    x:{
+                        //min:0,
+                        //max:24,
+                        //labels:Array.from(Array(25).keys())
+                        //stepSize:1
+                        beginAtZero: true,
+                        callback: function(value) {if (value % 1 === 0) {return value;}}
+                    }
                 }
             }
+            
         }
-    }
-)
+    )
+    currentGraph = myChart;
 
-console.log(myChart)
 
 //console.log(JSON.stringify(test.sampleCdf(.1)))
 
+
+}
+
+document.getElementsByTagName("button")[0].onclick = () => {
+    console.time("makeGraph")
+    createGraph()
+    console.timeEnd("makeGraph")
+}
