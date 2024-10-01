@@ -11,11 +11,12 @@
 class BinomialDistribution{
 
 
-    constructor(trials, p){
+    constructor(trials, p,iterations){
         this.trials = trials;
         this.p = p;
         this.f = [1,1]
         this.lf = [0,0]
+        this.iterations = iterations
     }
 
     logGamma(x){
@@ -102,7 +103,8 @@ class BinomialDistribution{
             for(var i = ITERATIONS-1; i >=1; i--){
                 continuedF = this.getCoeff(i,n,a,b) /(1+continuedF);
             }
-            return output * 1/(1+continuedF) * 1/this.beta(a,b,20000*Math.round(this.trials/24));
+            //20000*Math.round(this.trials/24)
+            return output * 1/(1+continuedF) * 1/this.beta(a,b,this.iterations);
         }
         
         toInt(t,k){
@@ -156,11 +158,11 @@ class PoissonBinomialDist{
 class DiceDistribution{
 
     //alternative constructor that just takes the combined chance as a parameter
-    constructor(numDice,diceSides,combinedChance){
+    constructor(numDice,diceSides,combinedChance,iterations){
         this.numDice = numDice;
         this.diceSides = diceSides;
         this.combinedChance = combinedChance;
-        this.biDist = new BinomialDistribution(numDice,this.combinedChance)
+        this.biDist = new BinomialDistribution(numDice,this.combinedChance,iterations)
     }
 
     //calculate the percentage of getting x or more succesful wounds
@@ -190,9 +192,9 @@ class DiceDistribution{
 
 }
 
-function createCombatDist(numDice,diceSides,toHit,toWound,armorSave){
+function createCombatDist(numDice,diceSides,toHit,toWound,armorSave,iterations){
     var combinedChance = (armorSave-1)/diceSides * (diceSides-toWound+1)/diceSides * (diceSides-toHit+1)/diceSides;
-    return new DiceDistribution(numDice,diceSides,combinedChance) 
+    return new DiceDistribution(numDice,diceSides,combinedChance,iterations) 
 }
 
 function testDistribution(dist,iterations){
@@ -219,18 +221,30 @@ function testDistribution(dist,iterations){
     return averageError;
 }
 
-function testNTimes(numDice,n){
+function testNTimes(numDice,n,iterations){
     var average = 0;
     for(var i = 0; i < n; i++){
         var toHit = Math.floor(Math.random() * (6 - 2) + 2)
         var toWound = Math.floor(Math.random() * (6 - 2) + 2);
         var armorSave = Math.floor(Math.random() * (6 - 2) + 2)
-        var dist = createCombatDist(numDice,6,toHit,toWound,armorSave)
+        var dist = createCombatDist(numDice,6,toHit,toWound,armorSave,iterations)
         var error = testDistribution(dist,300000)
-        console.log("The error for hitting on " + toHit + ", wounding on " + toWound + ", and saving on " + armorSave + " is " + error)
+        //console.log("The error for hitting on " + toHit + ", wounding on " + toWound + ", and saving on " + armorSave + " is " + error)
         average += error/n;
     }
     return average;
+}
+
+function timeAccuracyProfiling(startI, endI, deltaI){
+    var results = []
+    for(var i = startI; i <= endI; i += deltaI){
+        var startTime = performance.now()
+        var avgError = testNTimes(60,10,i)
+        var endTime = performance.now()
+        results.push([(endTime-startTime)/10,avgError])
+    }
+    console.log(results)
+    return results;
 }
 
 //var poiTest = new PoissonBinomialDist([0.4163448, 0.3340270, 0.9689613]) //new PoissonBinomialDist([3/6,3/6,1/6,1/6])
@@ -239,7 +253,7 @@ function testNTimes(numDice,n){
 //    console.log(poiTest.pdf(i))
 //}
 
-
+/*
 var test = createCombatDist(24,6,3,4,3)
 var cdfPoints = []
 for(var i = 0; i <= 24; i++){
@@ -250,7 +264,7 @@ for(var i = 0; i <= 24; i++){
     ///console.log("Error: " + Math.abs(test.cdf(i) - (1-test.biDist.cdf(i-1))))
     console.log("")
 }
-
+*/
 //console.log(testDistribution(test,100000))
 
 //console.log(testNTimes(100,50))
@@ -286,8 +300,8 @@ function createGraph(){
     var armorSave = Math.min(parseInt(document.getElementById("tSave").value) + parseInt(document.getElementById("fAP").value),7)
     var toWound = woundRoll(parseInt(document.getElementById("fStrength").value),parseInt(document.getElementById("tToughness").value))
     console.log(toWound)
-
-    var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave)
+    //set iterations = 5000* number of attacks. The required number of iterations seems to grow non-linearally, but this linear function gives accurate results up to 100s of attacks
+    var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave,5000 * attacks)
     var dataToGraph = distToGraph.sampleCdf(.25);
 
     var myChart = new Chart(
