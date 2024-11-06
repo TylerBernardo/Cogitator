@@ -2,30 +2,37 @@
 <html>
 <script src="https://d3js.org/d3.v4.js"></script>
 <link rel = "stylesheet" href = "style.css">
-<body>
+<body onload = "onload()">
 <h2>Warhammer Graphing</h2>
 <table>
     <tr>
         <td>
-            <label for="fAttacks">Enter your Unit's Attacks</label>
-            <input id = "fAttacks" name = "fAttacks">
-            <br>
-            <label for="fWS">Enter your Unit's WS/BS</label>
-            <input id = "fWS" name = "fWS">
-            <br>
-            <label for="fStrength">Enter your Unit's strength</label>
-            <input id = "fStrength" name = "fStrength">
-            <br>
-            <label for="fAP">Enter your Unit's AP</label>
-            <input id = "fAP" name = "fAP">
-            <hr>
-            <label for="tToughness">Enter your Targets's toughness</label>
-            <input id = "tToughness" name = "tToughness">
-            <br>
-            <label for="tSave">Enter your Target's Save</label>
-            <input id = "tSave" name = "tSave">
-            <br>
-            <button>Submit</button>
+            <form id = "simData">
+                <label for="fAttacks">Enter your Unit's Attacks</label>
+                <input id = "fAttacks" name = "fAttacks">
+                <br>
+                <label for="fWS">Enter your Unit's WS/BS</label>
+                <input id = "fWS" name = "fWS">
+                <br>
+                <label for="fStrength">Enter your Unit's strength</label>
+                <input id = "fStrength" name = "fStrength">
+                <br>
+                <label for="fAP">Enter your Unit's AP</label>
+                <input id = "fAP" name = "fAP">
+                <hr>
+                <label for="tToughness">Enter your Targets's toughness</label>
+                <input id = "tToughness" name = "tToughness">
+                <br>
+                <label for="tSave">Enter your Target's Save</label>
+                <input id = "tSave" name = "tSave">
+                <hr>
+                <div id = "keywords">
+
+                </div>
+                <br>
+                <button>Submit</button>
+            </form>
+            
         </td>
         <td>
             <canvas id="cdfGraph"></canvas>

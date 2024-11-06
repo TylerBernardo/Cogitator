@@ -5,6 +5,8 @@
 // * tool that runs simulations and then compares results to the distribution, outputting the mean error over all outcomes
 // * tool that adjusts iterations of aproximations to determine accuracy and runtime impact of certain combinations. Can use this to find when upping parameters just isnt worth it
 //large attack counts seem to diverge from expected results. the ammount of iterations needed seems to scale with the number of attacks. Write code to gather data to figure out how the error grows, since increasing iterations by a factor of N divides the error by N
+//make formula that combines lethal,sustained, and some rerolls. Lethalhits can just be added with a variable to toggle it on and off, sustained hits N can be modified into the mean result code
+//try and rewrite the mean->poisson->binomial setup as a percentage modifier on that individual roll. Dont require change of entire setup for those specific cases
 
 
 //generic BinomialDistribution class for probability usage
@@ -192,9 +194,30 @@ class DiceDistribution{
 
 }
 
-function createCombatDist(numDice,diceSides,toHit,toWound,armorSave,iterations){
-    var combinedChance = (armorSave-1)/diceSides * (diceSides-toWound+1)/diceSides * (diceSides-toHit+1)/diceSides;
-    return new DiceDistribution(numDice,diceSides,combinedChance,iterations) 
+var KEYWORDS = ["Sustained Hits 1", "Lethal Hits", "Reroll All Fails"]
+
+function createCombatDist(numDice,diceSides,toHit,toWound,armorSave,iterations,keywords){
+    var hitChance = (diceSides-toHit+1)/diceSides;
+    var woundChance = (diceSides-toWound+1)/diceSides
+    var saveChance = (armorSave-1)/diceSides
+    var combinedChance = saveChance * woundChance * hitChance;
+    var modifier = 1;
+    console.log(keywords)
+    if(keywords.includes("Sustained Hits 1")){
+        modifier += 1/(6 * hitChance)
+        numDice += numDice;
+    }
+    if(keywords.includes("Lethal Hits")){
+        modifier += (1-woundChance)/(6*hitChance*woundChance)
+    }
+    if(keywords.includes("Reroll All Fails")){
+        modifier = modifier * (2-hitChance);
+    }
+    console.log(modifier)
+    if(keywords.includes("Sustained Hits 1")){
+        modifier = modifier/2;
+    }
+    return new DiceDistribution(numDice,diceSides,combinedChance * modifier,iterations) 
 }
 
 function testDistribution(dist,iterations){
@@ -291,17 +314,39 @@ function woundRoll(s,t){
 
 var currentGraph = null;
 
+
+/*
+{
+    "fAttacks": "",
+    "fWS": "",
+    "fStrength": "",
+    "fAP": "",
+    "tToughness": "",
+    "tSave": "",
+    "Lethal Hits": "Lethal Hits"
+}
+*/
+
 function createGraph(){
     if(currentGraph != null){
         currentGraph.destroy()
     }
-    var attacks = parseInt(document.getElementById("fAttacks").value)
-    var ws = parseInt(document.getElementById("fWS").value)
-    var armorSave = Math.min(parseInt(document.getElementById("tSave").value) + parseInt(document.getElementById("fAP").value),7)
-    var toWound = woundRoll(parseInt(document.getElementById("fStrength").value),parseInt(document.getElementById("tToughness").value))
-    console.log(toWound)
+    var formData = new FormData(document.getElementById("simData"))
+    var data = Object.fromEntries(formData.entries());
+    console.log(data)
+    var attacks = parseInt(data.fAttacks)
+    var ws = parseInt(data.fWS)
+    var armorSave = Math.min(parseInt(data.tSave) + parseInt(data.fAP),7)
+    var toWound = woundRoll(parseInt(data.fStrength),parseInt(data.tToughness))
+    //figure out which keywords were selected
+    var keywords = []
+    for(var k of KEYWORDS){
+        if(data.hasOwnProperty(k)){
+            keywords.push(k)
+        }
+    }
     //set iterations = 5000* number of attacks. The required number of iterations seems to grow non-linearally, but this linear function gives accurate results up to 100s of attacks
-    var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave,5000 * attacks)
+    var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave,5000 * attacks,keywords)
     var dataToGraph = distToGraph.sampleCdf(.25);
 
     var myChart = new Chart(
@@ -338,8 +383,27 @@ function createGraph(){
 
 }
 
-document.getElementsByTagName("button")[0].onclick = () => {
-    console.time("makeGraph")
-    createGraph()
-    console.timeEnd("makeGraph")
+function onload(){
+    console.log("setup")
+    //set submit button onclick
+    document.getElementsByTagName("button")[0].onclick = (e) => {
+        e.preventDefault();
+        console.time("makeGraph")
+        createGraph()
+        console.timeEnd("makeGraph")
+    }
+    //generate form based on keywords
+    var keywordDiv = document.getElementById("keywords")
+    for(var k of KEYWORDS){
+        var radio = document.createElement("input")
+        radio.type = "checkbox";
+        radio.name = k;
+        radio.value = k;
+        var label = document.createElement("label")
+        label.for = k
+        label.textContent = k;
+        keywordDiv.appendChild(label);
+        keywordDiv.appendChild(radio);
+    }
 }
+
