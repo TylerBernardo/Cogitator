@@ -194,7 +194,7 @@ class DiceDistribution{
 
 }
 
-var KEYWORDS = ["Sustained Hits 1", "Lethal Hits", "Reroll All Fails"]
+var KEYWORDS = ["Sustained Hits 1", "Lethal Hits", "Reroll All Fails","Reroll All Non-6", "Devastating Wounds"]
 
 function createCombatDist(numDice,diceSides,toHit,toWound,armorSave,iterations,keywords){
     var hitChance = (diceSides-toHit+1)/diceSides;
@@ -210,8 +210,15 @@ function createCombatDist(numDice,diceSides,toHit,toWound,armorSave,iterations,k
     if(keywords.includes("Lethal Hits")){
         modifier += (1-woundChance)/(6*hitChance*woundChance)
     }
+    if(keywords.includes("Devastating Wounds")){
+        
+        modifier += (1-saveChance)/(6*woundChance * saveChance)
+    }
     if(keywords.includes("Reroll All Fails")){
         modifier = modifier * (2-hitChance);
+    }
+    if(keywords.includes("Reroll All Non-6")){
+        modifier = (11.0/6) * modifier + (1/(6*hitChance)) - 1
     }
     console.log(modifier)
     if(keywords.includes("Sustained Hits 1")){
