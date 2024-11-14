@@ -12,7 +12,6 @@
 //generic BinomialDistribution class for probability usage
 class BinomialDistribution{
 
-
     constructor(trials, p,iterations){
         this.trials = trials;
         this.p = p;
@@ -55,79 +54,92 @@ class BinomialDistribution{
         return this.f[n] = this.factorial(n-1) * n;
     }
 
-        //calcualte N Choose R
-        nCr(n,r){
-            return Math.exp(this.logFactorial(n) - (this.logFactorial(r) + this.logFactorial(n-r)))
-            //return this.factorial(n)/(this.factorial(r) * this.factorial(n-r))
+    //calcualte N Choose R
+    nCr(n,r){
+        return Math.exp(this.logFactorial(n) - (this.logFactorial(r) + this.logFactorial(n-r)))
+        //return this.factorial(n)/(this.factorial(r) * this.factorial(n-r))
+    }
+    //calculate the average number of succesful wounds
+    average(){
+        return this.trials * this.p
+    }
+    //calculate the probability of getting a specific number of succesful wounds
+    pdf(x){
+        if(x < 0 || x > this.trials){
+            return -1;
         }
-        //calculate the average number of succesful wounds
-        average(){
-            return this.trials * this.p
+        return this.nCr(this.trials,x) * (this.p**x) * (1-this.p)**(this.trials-x)
+    }
+    //get the nth coefficent for the continued fraction used in incompleteBeta()
+    getCoeff(n,x,a,b){
+        if(n==0){return 1;}
+        if(n%2==1){
+            var m = (n-1)/2
+            return -1 * ( ( a + m ) * ( a + b + m ) * x )/( (a + 2 * m) * ( a + 2*m + 1 ) )
         }
-        //calculate the probability of getting a specific number of succesful wounds
-        pdf(x){
-            if(x < 0 || x > this.trials){
-                return -1;
-            }
-            return this.nCr(this.trials,x) * (this.p**x) * (1-this.p)**(this.trials-x)
-        }
-        //get the nth coefficent for the continued fraction used in incompleteBeta()
-        getCoeff(n,x,a,b){
-            if(n==0){return 1;}
-            if(n%2==1){
-                var m = (n-1)/2
-                return -1 * ( ( a + m ) * ( a + b + m ) * x )/( (a + 2 * m) * ( a + 2*m + 1 ) )
-            }
-            var m = n/2;
-            return ( m * (b-m) * x )/( (a + 2 * m - 1) * (a + 2 * m) )
-        }
-    
-    
-        //estimate beta(x,y) using a certain number of iterations
-        beta(x,y,iterations){
-            var output = (x+y)/(x*y);
-            for(var k = 1; k < iterations; k++){
-                output = output * (1 + (x + y)/k)/( (1+x/k) * (1+y/k))
-            }
-            return output;
-        }
-    
-        //https://jamesmccaffrey.wordpress.com/2022/07/01/computing-the-incomplete-beta-function-from-scratch-in-excel/
-        //calculate the beta(a,b,n) using a continued fraction
-        incompleteBeta(a,b,n){
-            if( b != 0 && n > (a+1)/(a+b+2)){
-                return 1 - this.incompleteBeta(b,a,1-n);
-            }
-            //calculate the part before the continued fraction
-            var output = ((n**a) * ((1-n)**b))/a
-            var ITERATIONS = 100;
-            var continuedF = this.getCoeff(ITERATIONS,n,a,b)
-            for(var i = ITERATIONS-1; i >=1; i--){
-                continuedF = this.getCoeff(i,n,a,b) /(1+continuedF);
-            }
-            //20000*Math.round(this.trials/24)
-            return output * 1/(1+continuedF) * 1/this.beta(a,b,this.iterations);
-        }
-        
-        toInt(t,k){
-            return (t**(this.trials - k - 1)) * (1-t)**k
-        }
+        var m = n/2;
+        return ( m * (b-m) * x )/( (a + 2 * m - 1) * (a + 2 * m) )
+    }
 
-        cdf(x){
-            if(x < 0){
-                return 0;
-            }
-            var output = (this.trials - x) * this.nCr(this.trials,x)
-            var integral = 0;
-
-            for(var i = 0; i < (1 - this.p); i+=.0001){
-                //integral += this.toInt(this.evals[i][0],x) * this.evals[i][1]
-                //integral += this.toInt(-1 * this.evals[i][0],x) * this.evals[i][1]
-                integral += .0001 * this.toInt(i,x)
-            }
-
-            return output * integral;
+    //estimate beta(x,y) using a certain number of iterations
+    beta(x,y,iterations){
+        var output = (x+y)/(x*y);
+        for(var k = 1; k < iterations; k++){
+            output = output * (1 + (x + y)/k)/( (1+x/k) * (1+y/k))
         }
+        return output;
+    }
+    
+    //https://jamesmccaffrey.wordpress.com/2022/07/01/computing-the-incomplete-beta-function-from-scratch-in-excel/
+    //calculate the beta(a,b,n) using a continued fraction
+    incompleteBeta(a,b,n){
+        if( b != 0 && n > (a+1)/(a+b+2)){
+            return 1 - this.incompleteBeta(b,a,1-n);
+        }
+        //calculate the part before the continued fraction
+        var output = ((n**a) * ((1-n)**b))/a
+        var ITERATIONS = 100;
+        var continuedF = this.getCoeff(ITERATIONS,n,a,b)
+        for(var i = ITERATIONS-1; i >=1; i--){
+            continuedF = this.getCoeff(i,n,a,b) /(1+continuedF);
+        }
+        //20000*Math.round(this.trials/24)
+        return output * 1/(1+continuedF) * 1/this.beta(a,b,this.iterations);
+    }
+    //function used for integration in cdf
+    toInt(t,k){
+        return (t**(this.trials - k - 1)) * (1-t)**k
+    }
+    //not currently used
+    oldCdf(x){
+        if(x < 0){
+            return 0;
+        }
+        var output = (this.trials - x) * this.nCr(this.trials,x)
+        var integral = 0;
+
+        for(var i = 0; i < (1 - this.p); i+=.0001){
+            //integral += this.toInt(this.evals[i][0],x) * this.evals[i][1]
+            //integral += this.toInt(-1 * this.evals[i][0],x) * this.evals[i][1]
+            integral += .0001 * this.toInt(i,x)
+        }
+        return output * integral;
+    }
+
+    cdf(x){
+        if(x == 0){
+            return 1
+        }
+        //return 1-this.biDist.cdf(x-1)
+        var a = this.trials - x + 1;
+        var b = x;
+        var n = 1 - this.p;
+        return 1-this.incompleteBeta(a,b,n)///this.beta(a,b,1000)
+    }
+
+    pdf(x){
+        return this.nCr(this.trials,x) * (this.p**x) * ((1-this.p)**(this.trials-x));
+    }
 }
 //https://en.wikipedia.org/wiki/Poisson_binomial_distribution
 //works acording to test from https://github.com/tsakim/poibin/blob/master/test_poibin.py
@@ -169,14 +181,11 @@ class DiceDistribution{
 
     //calculate the percentage of getting x or more succesful wounds
     cdf(x){
-        if(x == 0){
-            return 1
-        }
-        //return 1-this.biDist.cdf(x-1)
-        var a = this.numDice - x + 1;
-        var b = x;
-        var n = 1 - this.combinedChance;
-        return 1-this.biDist.incompleteBeta(a,b,n)///this.beta(a,b,1000)
+        return this.biDist.cdf(x)
+    }
+
+    pdf(x){
+        return this.biDist.pdf(x)
     }
     
     //sample points from the cdf function that are each space *deltaX* from eachother. The coordinates are shifted for the graphing library
@@ -184,17 +193,35 @@ class DiceDistribution{
         var pointsx = []
         var pointsy = []
         for(var x = 0; x <= this.numDice; x+=deltaX){
-            //points.push([x,this.cdf(x)]);
-            //points.push([420*x/24,420-420*(1-this.biDist.cdf(x))]);
+            var toPush = this.biDist.cdf(x)
+            //stop printing once the percentage is so small to be negligiable
+            if(Math.abs(toPush) < .0001){
+                break;
+            }
             pointsx.push(x)
-            pointsy.push(this.cdf(x))
+            pointsy.push(toPush)
         }
         return [pointsx,pointsy];
     }
 
+    samplePdf(){
+        var pointsx = []
+        var pointsy = []
+        for(var x = 0; x <= this.numDice; x++){
+            var toPush = this.biDist.pdf(x)
+            //stop printing once the percentage is so small to be negligiable
+            if(Math.abs(toPush) < .0001){
+                break;
+            }
+            pointsx.push(x)
+            pointsy.push(toPush)
+        }
+        return [pointsx,pointsy]
+    }
+
 }
 
-var KEYWORDS = ["Sustained Hits 1", "Lethal Hits", "Reroll All Fails","Reroll All Non-6", "Devastating Wounds"]
+var KEYWORDS = ["Sustained Hits 1", "Lethal Hits", "Reroll All Fails", "Reroll all non 6's", "Devastating Wounds"]
 
 function createCombatDist(numDice,diceSides,toHit,toWound,armorSave,iterations,keywords){
     var hitChance = (diceSides-toHit+1)/diceSides;
@@ -211,18 +238,18 @@ function createCombatDist(numDice,diceSides,toHit,toWound,armorSave,iterations,k
         modifier += (1-woundChance)/(6*hitChance*woundChance)
     }
     if(keywords.includes("Devastating Wounds")){
-        
-        modifier += (1-saveChance)/(6*woundChance * saveChance)
+        modifier = modifier * (1 + (1/(6 * woundChance * saveChance)) - (1/(6*woundChance)))
     }
     if(keywords.includes("Reroll All Fails")){
         modifier = modifier * (2-hitChance);
     }
-    if(keywords.includes("Reroll All Non-6")){
-        modifier = (11.0/6) * modifier + (1/(6*hitChance)) - 1
+    if(keywords.includes("Reroll all non 6's")){
+        modifier = modifier * (11/6.0) + (1/(6*hitChance)) - 1
     }
     console.log(modifier)
     if(keywords.includes("Sustained Hits 1")){
         modifier = modifier/2;
+        iterations = iterations*4
     }
     return new DiceDistribution(numDice,diceSides,combinedChance * modifier,iterations) 
 }
@@ -277,28 +304,6 @@ function timeAccuracyProfiling(startI, endI, deltaI){
     return results;
 }
 
-//var poiTest = new PoissonBinomialDist([0.4163448, 0.3340270, 0.9689613]) //new PoissonBinomialDist([3/6,3/6,1/6,1/6])
-//poiTest.generatePDF();
-//for(var i = 0; i <= 3; i++){
-//    console.log(poiTest.pdf(i))
-//}
-
-/*
-var test = createCombatDist(24,6,3,4,3)
-var cdfPoints = []
-for(var i = 0; i <= 24; i++){
-    //console.log("Probability of " + i + ":" + test.biDist.pdf(i))
-    cdfPoints.push(test.cdf(i))
-    console.log("Calculated CDF of " + i + ":" + test.cdf(i) + "\n")
-    //console.log("Calculated CDF using integral estimate" + (1-test.biDist.cdf(i-1)))
-    ///console.log("Error: " + Math.abs(test.cdf(i) - (1-test.biDist.cdf(i-1))))
-    console.log("")
-}
-*/
-//console.log(testDistribution(test,100000))
-
-//console.log(testNTimes(100,50))
-
 function woundRoll(s,t){
     if(s >= 2 * t){
         return 2;
@@ -319,24 +324,43 @@ function woundRoll(s,t){
     return 5;
 }
 
-var currentGraph = null;
+var currentCdfGraph = null;
+var currentPdfGraph = null;
 
+function createChartFromData(data,element,type){
+    return new Chart(
+        element,
+        {
+            type:type,
+            data:{
+                datasets: [{
+                data: data[1]
+                }],
 
-/*
-{
-    "fAttacks": "",
-    "fWS": "",
-    "fStrength": "",
-    "fAP": "",
-    "tToughness": "",
-    "tSave": "",
-    "Lethal Hits": "Lethal Hits"
+                labels: data[0]
+            },
+            options:{
+                scales:{
+                    x:{
+                        //min:0,
+                        //max:24,
+                        //labels:Array.from(Array(25).keys())
+                        //stepSize:1
+                        beginAtZero: true,
+                        callback: function(value) {if (value % 1 === 0) {return value;}}
+                    }
+                }
+            }
+            
+        }
+    )
 }
-*/
 
 function createGraph(){
-    if(currentGraph != null){
-        currentGraph.destroy()
+    //if a graph already exists, destroy it
+    if(currentCdfGraph != null){
+        currentCdfGraph.destroy()
+        currentPdfGraph.destroy()
     }
     var formData = new FormData(document.getElementById("simData"))
     var data = Object.fromEntries(formData.entries());
@@ -355,39 +379,14 @@ function createGraph(){
     //set iterations = 5000* number of attacks. The required number of iterations seems to grow non-linearally, but this linear function gives accurate results up to 100s of attacks
     var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave,5000 * attacks,keywords)
     var dataToGraph = distToGraph.sampleCdf(.25);
-
-    var myChart = new Chart(
-        document.getElementById("cdfGraph"),
-        {
-            type:"line",
-            data:{
-                datasets: [{
-                data: dataToGraph[1]
-                }],
-
-                labels: dataToGraph[0]
-            },
-            options:{
-                scales:{
-                    x:{
-                        //min:0,
-                        //max:24,
-                        //labels:Array.from(Array(25).keys())
-                        //stepSize:1
-                        beginAtZero: true,
-                        callback: function(value) {if (value % 1 === 0) {return value;}}
-                    }
-                }
-            }
-            
-        }
-    )
-    currentGraph = myChart;
-
-
-//console.log(JSON.stringify(test.sampleCdf(.1)))
-
-
+    //create a chart for the CDF of this distribution
+    var cdfChart = createChartFromData(dataToGraph,document.getElementById("cdfGraph"),"line")
+    //create a chart for the PDF of this distribution
+    var pdfData = distToGraph.samplePdf()
+    var pdfChart = createChartFromData(pdfData,document.getElementById("pdfGraph"),"bar")
+    //update the internal variables tracking the current graph
+    currentCdfGraph = cdfChart;
+    currentPdfGraph = pdfChart
 }
 
 function onload(){
