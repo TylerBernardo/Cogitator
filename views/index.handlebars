@@ -7,24 +7,24 @@
 <table>
     <tr>
         <td>
-            <form id = "simData">
+            <form id = "simData" data-autoFilled = "{{dataFilled}}">
                 <label for="fAttacks">Enter your Unit's Attacks</label>
-                <input id = "fAttacks" name = "fAttacks">
+                <input id = "fAttacks" name = "fAttacks" value = "{{attacks}}">
                 <br>
                 <label for="fWS">Enter your Unit's WS/BS</label>
-                <input id = "fWS" name = "fWS">
+                <input id = "fWS" name = "fWS" value = "{{ws}}">
                 <br>
                 <label for="fStrength">Enter your Unit's strength</label>
-                <input id = "fStrength" name = "fStrength">
+                <input id = "fStrength" name = "fStrength" value = "{{strength}}">
                 <br>
                 <label for="fAP">Enter your Unit's AP</label>
-                <input id = "fAP" name = "fAP">
+                <input id = "fAP" name = "fAP" value = "{{ap}}">
                 <hr>
                 <label for="tToughness">Enter your Targets's toughness</label>
-                <input id = "tToughness" name = "tToughness">
+                <input id = "tToughness" name = "tToughness" value = "{{toughness}}">
                 <br>
                 <label for="tSave">Enter your Target's Save</label>
-                <input id = "tSave" name = "tSave">
+                <input id = "tSave" name = "tSave" value = "{{save}}">
                 <hr>
                 <div id = "keywords">
 
@@ -44,6 +44,7 @@
 <script src="
 https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js
 "></script>
+
 <script src = "main.js"></script>
 
 </body>

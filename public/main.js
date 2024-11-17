@@ -207,10 +207,11 @@ class DiceDistribution{
     samplePdf(){
         var pointsx = []
         var pointsy = []
+        var mean = this.biDist.average();
         for(var x = 0; x <= this.numDice; x++){
             var toPush = this.biDist.pdf(x)
             //stop printing once the percentage is so small to be negligiable
-            if(Math.abs(toPush) < .0001){
+            if(x > mean && Math.abs(toPush) < .0001){
                 break;
             }
             pointsx.push(x)
@@ -327,8 +328,8 @@ function woundRoll(s,t){
 var currentCdfGraph = null;
 var currentPdfGraph = null;
 
-function createChartFromData(data,element,type){
-    return new Chart(
+function createChartFromData(data,element,type,subdivisions){
+    var toReturn = new Chart(
         element,
         {
             type:type,
@@ -347,13 +348,27 @@ function createChartFromData(data,element,type){
                         //labels:Array.from(Array(25).keys())
                         //stepSize:1
                         beginAtZero: true,
-                        callback: function(value) {if (value % 1 === 0) {return value;}}
+                        ticks:{
+                            callback: function(value,index,ticks) {
+                                if(index == ticks.length - 1){
+                                    return (value/subdivisions) + "+"
+                                }
+                                if(value % subdivisions == 0){
+                                    return (value/subdivisions)
+                                }
+                                return "";
+                            }
+                        }
                     }
-                }
+                },
             }
             
         }
     )
+
+    
+
+    return toReturn
 }
 
 function createGraph(){
@@ -380,10 +395,10 @@ function createGraph(){
     var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave,5000 * attacks,keywords)
     var dataToGraph = distToGraph.sampleCdf(.25);
     //create a chart for the CDF of this distribution
-    var cdfChart = createChartFromData(dataToGraph,document.getElementById("cdfGraph"),"line")
+    var cdfChart = createChartFromData(dataToGraph,document.getElementById("cdfGraph"),"line",4)
     //create a chart for the PDF of this distribution
     var pdfData = distToGraph.samplePdf()
-    var pdfChart = createChartFromData(pdfData,document.getElementById("pdfGraph"),"bar")
+    var pdfChart = createChartFromData(pdfData,document.getElementById("pdfGraph"),"bar",1)
     //update the internal variables tracking the current graph
     currentCdfGraph = cdfChart;
     currentPdfGraph = pdfChart
@@ -410,6 +425,9 @@ function onload(){
         label.textContent = k;
         keywordDiv.appendChild(label);
         keywordDiv.appendChild(radio);
+    }
+    if(document.getElementById("simData").dataset.autofilled == "true"){
+        createGraph();
     }
 }
 
