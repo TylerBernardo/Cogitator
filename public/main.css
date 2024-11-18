@@ -1,0 +1,13 @@
+body{
+    padding:0px;
+    margin:0px;
+}
+
+.navItem{
+    display:inline; 
+    padding-right:10px;
+}
+
+#header, #footer{
+    background-color:lightgray;
+}

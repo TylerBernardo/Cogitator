@@ -5,10 +5,15 @@ const eh = require("express-handlebars")
 const app = express()
 const port = 3000
 
+
+async function getAllUnitData(){
+    var file = await fs.readFile('applicationData.JSON',{encoding:'utf-8'})
+    return JSON.parse(file);
+}
+
 //returns undefined if unitName is not in the data
 async function getUnitData(unitName){
-    var file = await fs.readFile('applicationData.JSON',{encoding:'utf-8'})
-    var data = JSON.parse(file);
+    var data = await getAllUnitData()
     return data.Units[unitName];
 }
 //potentially replace with MongoDB in future if time permits
@@ -45,9 +50,14 @@ app.get('/load', async (req,res) => {
     res.render('index.handlebars',data)
 })
 
+app.get('/units', async (req,res) => {
+    res.render('viewUnits.handlebars',await getAllUnitData())
+})
+
 app.post('/set', async (req,res) => {
     var q = req.body;
-    setUnitData(q.unitName,q.fAttacks,q.fWs,q.fStrength,q.fAp,q.tToughness,q.tSave)
+    console.log(q)
+    setUnitData(q.unitName,q.fAttacks,q.fWS,q.fStrength,q.fAP,q.tToughness,q.tSave)
 })
 
 app.listen(port, () => {

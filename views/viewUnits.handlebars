@@ -1,0 +1,20 @@
+
+
+<body onload = "onload()">
+<h1>Load Unit</h1>
+<ul>
+    {{#each Units}}
+        <li><a href = "/load?unitName={{this.unitName}}">{{this.unitName}}</a></li>
+    {{/each}}
+</ul>
+
+
+<script src="
+https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js
+"></script>
+
+<script src = "view.js"></script>
+<script src="https://d3js.org/d3.v4.js"></script>
+<link rel = "stylesheet" href = "view.css">
+
+</body>
