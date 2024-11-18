@@ -404,10 +404,23 @@ function createGraph(){
     currentPdfGraph = pdfChart
 }
 
+function saveUnit(){
+    var formData = new FormData(document.getElementById("simData"))
+    var data = Object.fromEntries(formData.entries());
+    data["unitName"] = prompt("What is the name of this unit?")
+    fetch("/set",{
+        method:"POST",
+        body:JSON.stringify(data),
+        headers:{
+            "content-type": "application/json",
+        },
+    })
+}
+
 function onload(){
     console.log("setup")
     //set submit button onclick
-    document.getElementsByTagName("button")[0].onclick = (e) => {
+    document.getElementById("submit").onclick = (e) => {
         e.preventDefault();
         console.time("makeGraph")
         createGraph()
@@ -428,6 +441,11 @@ function onload(){
     }
     if(document.getElementById("simData").dataset.autofilled == "true"){
         createGraph();
+    }
+    //set save button onclick
+    document.getElementById("save").onclick = (e) =>{
+        e.preventDefault();
+        saveUnit();
     }
 }
 

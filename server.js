@@ -29,15 +29,16 @@ async function setUnitData(_unitName,_attacks,_ws,_strength,_ap,_toughness,_save
 }
 
 app.use(express.static("public"))
+app.use(express.json())
 app.engine('handlebars',eh.engine())
 app.set('view engine','handlebars')
 
-//TODO: Use handlebars to generate the keyword options on the server side
+
 app.get('/', async (req, res) => {
   //res.sendFile("public/index.html");
   res.render('index.handlebars')
 })
-//TODO: use handlebars to prefill form data with unit info
+
 app.get('/load', async (req,res) => {
     var data = await getUnitData(req.query.unitName)
     data["dataFilled"] = true
@@ -46,7 +47,7 @@ app.get('/load', async (req,res) => {
 
 app.post('/set', async (req,res) => {
     var q = req.body;
-    setUnitData(q.unitName,q.attacks,q.ws,q.strength,q.ap,q.toughness,q.save)
+    setUnitData(q.unitName,q.fAttacks,q.fWs,q.fStrength,q.fAp,q.tToughness,q.tSave)
 })
 
 app.listen(port, () => {
