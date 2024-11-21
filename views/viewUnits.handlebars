@@ -4,7 +4,73 @@
 <h1>Load Unit</h1>
 <ul>
     {{#each Units}}
-        <li><a href = "/load?unitName={{this.unitName}}">{{this.unitName}}</a></li>
+        <div class = "dataCard">
+            <table class = "target">
+                <tr class = "TargetName">
+                    <td class = "name" colspan = 2>
+                        <a href = "/load?unitName={{this.unitName}}"><h1>{{this.unitName}}</h1></a>
+                    </td>
+                </tr>
+                <tr class = "TargetLabels">
+                    <td class = "tLabel">
+                        <p>T</p>
+                    </td>
+                    <td class = "tLabel">
+                        <p>SV</p>
+                    </td>
+                </tr>
+                <tr class = "TargetStats">
+                    <td>
+                        <div class = "tStat">
+                            <p>{{this.toughness}}</p>
+                        </div>
+                        
+                    </td>
+                    <td>
+                        <div class = "tStat">
+                             <p>{{this.save}}</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <h3>VS</h3>
+            <table>
+                <tr class = "WeaponLabels">
+                    <td>
+                        <p>WEAPON</p>
+                    </td>
+                    <td>
+                        <p>A</p>
+                    </td>
+                    <td>
+                        <p>WS</p>
+                    </td>
+                    <td>
+                        <p>S</p>
+                    </td>
+                    <td>
+                        <p>AP</p>
+                    </td>
+                </tr>   
+                <tr class = "WeaponInfo">
+                    <td></td>
+                    <td class = "wStat">
+                        {{this.attacks}}
+                    </td>
+                    <td class = "wStat">
+                        {{this.ws}}
+                    </td>
+                    <td class = "wStat">
+                        {{this.strength}}
+                    </td>
+                    <td class = "wStat">
+                        {{this.ap}}
+                    </td>
+                </tr>   
+            </table>
+        </div>
+        <br>
+        <br>
     {{/each}}
 </ul>
 

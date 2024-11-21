@@ -1,0 +1,80 @@
+table, th, td {
+    padding:0px;
+    margin:0px;
+}
+
+table{
+    border-collapse: collapse;
+}
+
+.WeaponInfo{
+    background-color: #dddee0;
+    text-align:center;
+}
+
+.WeaponLabels{
+    background-color: #536766;
+    text-align:center;
+}
+
+.WeaponLabels td p{
+    margin-left:10px;
+    margin-right:10px;
+}
+
+.tLabel p{
+    color:white;
+    position:relative;
+    top:8px;
+    padding:0px;
+    margin:0px;
+}
+
+.tLabel{
+    height:10px;
+    text-align: center;
+}
+
+td:has(.tStat){
+    
+}
+
+.tStat{
+    border-radius:10px 0px 10px 0px;
+    background-color: white;
+    padding:20px;
+    margin:10px;
+    
+    text-align:center;
+}
+
+.tStat p{
+    padding:0px;
+    margin:0px;
+    width:19px;
+    height:19px;
+}
+
+.TargetName,.TargetStats,.TargetLabels{
+    background-color: #04293f;
+}
+
+.name a{
+    color:white;
+    text-decoration: none;
+}
+
+.name a h1{
+    margin:0px;
+    text-decoration: none;
+}
+
+.target{
+    padding:10px;
+    background-color:#04293f;
+}
+
+
+table,h3{
+    display:inline-block;
+}
