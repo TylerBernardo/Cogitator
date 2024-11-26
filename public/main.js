@@ -328,17 +328,20 @@ function woundRoll(s,t){
 var currentCdfGraph = null;
 var currentPdfGraph = null;
 
-function createChartFromData(data,element,type,subdivisions){
+function createChartFromData(data1,data2,element,type1,type2,subdivisions){
     var toReturn = new Chart(
         element,
         {
-            type:type,
             data:{
                 datasets: [{
-                data: data[1]
+                    type:type1,
+                    data: data1[1],
+                },{
+                    type:type2,
+                    data:data2[1],
                 }],
 
-                labels: data[0]
+                labels: data1[0]
             },
             options:{
                 scales:{
@@ -361,13 +364,22 @@ function createChartFromData(data,element,type,subdivisions){
                         }
                     }
                 },
+                legend:{
+                    display:false
+                },
+               plugins:{
+                tooltip: {
+                    filter: function (tooltipItem, tooltipIndex, tooltipItems, data) {
+                        console.log(tooltipItem)
+                        return  tooltipItem.dataIndex % subdivisions == 0;
+                    }
+                    
+                 }
+               }
             }
             
         }
     )
-
-    
-
     return toReturn
 }
 
@@ -393,15 +405,16 @@ function createGraph(){
     }
     //set iterations = 5000* number of attacks. The required number of iterations seems to grow non-linearally, but this linear function gives accurate results up to 100s of attacks
     var distToGraph = createCombatDist(attacks,6,ws,toWound,armorSave,5000 * attacks,keywords)
-    var dataToGraph = distToGraph.sampleCdf(.25);
-    //create a chart for the CDF of this distribution
-    var cdfChart = createChartFromData(dataToGraph,document.getElementById("cdfGraph"),"line",4)
-    //create a chart for the PDF of this distribution
+    var cdfData = distToGraph.sampleCdf(.25);
     var pdfData = distToGraph.samplePdf()
-    var pdfChart = createChartFromData(pdfData,document.getElementById("pdfGraph"),"bar",1)
+    //create a chart for the CDF of this distribution
+    var cdfChart = createChartFromData(cdfData,pdfData,document.getElementById("cdfGraph"),"line","bar",4)
+    //create a chart for the PDF of this distribution
+    
+    //var pdfChart = createChartFromData(pdfData,document.getElementById("pdfGraph"),"bar",1)
     //update the internal variables tracking the current graph
     currentCdfGraph = cdfChart;
-    currentPdfGraph = pdfChart
+    //currentPdfGraph = pdfChart
 }
 
 function saveUnit(){

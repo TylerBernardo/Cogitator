@@ -47,7 +47,10 @@ h1.navItem{
     text-align:center;
     padding-top:20px;
     padding-bottom:20px;
-    position:absolute;
-    bottom:0px;
+    
     width:100%;
+}
+
+#content{
+    min-height:calc(100vh - 58.5px - 88.5px - 20px);
 }
