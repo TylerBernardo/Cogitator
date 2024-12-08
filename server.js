@@ -17,11 +17,12 @@ async function getUnitData(unitName){
     return data.Units[unitName];
 }
 //potentially replace with MongoDB in future if time permits
-async function setUnitData(_unitName,_attacks,_ws,_strength,_ap,_toughness,_save){
+async function setUnitData(_attackerName,_defenderName,_attacks,_ws,_strength,_ap,_toughness,_save){
     var file = await fs.readFile('applicationData.JSON',{encoding:'utf-8'})
     var data = JSON.parse(file);
     var unitToAdd = {
-        unitName:_unitName,
+        attackerName:_attackerName,
+        defenderName:_defenderName,
         attacks:_attacks,
         ws:_ws,
         strength:_strength,
@@ -29,7 +30,7 @@ async function setUnitData(_unitName,_attacks,_ws,_strength,_ap,_toughness,_save
         toughness:_toughness,
         save:_save
     }
-    data.Units[_unitName] = unitToAdd;
+    data.Units[_attackerName + "_vs_" + _defenderName] = unitToAdd;
     fs.writeFile('applicationData.JSON',JSON.stringify(data),{encoding:'utf-8'})
 }
 
@@ -56,8 +57,7 @@ app.get('/units', async (req,res) => {
 
 app.post('/set', async (req,res) => {
     var q = req.body;
-    console.log(q)
-    setUnitData(q.unitName,q.fAttacks,q.fWS,q.fStrength,q.fAP,q.tToughness,q.tSave)
+    setUnitData(q.attackerName,q.defenderName,q.fAttacks,q.fWS,q.fStrength,q.fAP,q.tToughness,q.tSave)
 })
 
 app.listen(port, () => {

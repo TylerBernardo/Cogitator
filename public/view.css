@@ -35,9 +35,6 @@ table{
     text-align: center;
 }
 
-td:has(.tStat){
-    
-}
 
 .tStat{
     border-radius:10px 0px 10px 0px;
@@ -77,4 +74,8 @@ td:has(.tStat){
 
 table,h3{
     display:inline-block;
+}
+
+.aName{
+    padding:5px;
 }

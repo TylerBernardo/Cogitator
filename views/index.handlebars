@@ -1,44 +1,49 @@
 <script src="https://d3js.org/d3.v4.js"></script>
 <link rel = "stylesheet" href = "style.css">
 <body onload = "onload()">
-<h2>Warhammer Graphing</h2>
-<table>
-    <tr>
-        <td>
-            <form id = "simData" data-autoFilled = "{{dataFilled}}">
-                <label for="fAttacks">Enter your Unit's Attacks</label>
-                <input id = "fAttacks" name = "fAttacks" value = "{{attacks}}">
-                <br>
-                <label for="fWS">Enter your Unit's WS/BS</label>
-                <input id = "fWS" name = "fWS" value = "{{ws}}">
-                <br>
-                <label for="fStrength">Enter your Unit's strength</label>
-                <input id = "fStrength" name = "fStrength" value = "{{strength}}">
-                <br>
-                <label for="fAP">Enter your Unit's AP</label>
-                <input id = "fAP" name = "fAP" value = "{{ap}}">
-                <hr>
-                <label for="tToughness">Enter your Targets's toughness</label>
-                <input id = "tToughness" name = "tToughness" value = "{{toughness}}">
-                <br>
-                <label for="tSave">Enter your Target's Save</label>
-                <input id = "tSave" name = "tSave" value = "{{save}}">
-                <hr>
-                <div id = "keywords">
+<div id = "flexCon">
+    <div id = "simData">
+        <form id = "simDataForm" data-autoFilled = "{{dataFilled}}">
+            <h3>Attacking Unit</h3>
+            <div id = "attacker">
+                {{> fancyButton label="Attacks" prefill=attacks id="fAttacks" name="fAttacks"}}
 
-                </div>
-                <br>
-                <button id = "submit">Submit</button>
-                <button id = "save">Save</button>
-            </form>
+                {{> fancyButton label="WS" prefill=ws id="fWS" name="fWS"}}
+
+                {{> fancyButton label="Strength" prefill=strength id="fStrength" name="fStrength"}}
+
+                {{> fancyButton label="AP" prefill=ap id="fAP" name="fAP"}}
+            </div>
             
-        </td>
-        <td>
+            <hr>
+            <h3>Defending Unit</h3>
+            <div id = "defender">
+                {{> fancyButton label="Toughness" prefill=toughness id="tToughness" name="tToughness"}}
+                {{> fancyButton label="Armor Save" prefill=save id="tSave" name="tSave"}}
+            </div>
+            
+            <hr>
+            <h3>Modifiers</h3>
+            <div id = "keywords">
+                
+            </div>
+            <div id = "buttons">
+                <button id = "submit">Simulate Resuts</button>
+                <button id = "save">Save Setup</button>
+            </div>
+        </form>
+        <br>
+
+
+    </div>
+                
+    <div id = "simGraphs">
+        <div id = "chartResize">
             <canvas id="cdfGraph"></canvas>
-            <canvas id = "pdfGraph"></canvas>
-        </td>
-    </tr>
-</table>
+        </div>
+        
+    </div>
+</div>
 
 <script src="
 https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js

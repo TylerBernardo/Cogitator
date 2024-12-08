@@ -1,1 +1,1 @@
-{"Units":{"test":{"unitName":"test","attacks":20,"ws":2,"strength":3,"ap":4,"toughness":10,"save":2},"test2":{"unitName":"test2","attacks":"4","ws":"2","strength":"3","ap":"4","toughness":"7","save":"2"}}}
+{"Units":{"Intercessors_vs_Scarab Swarm":{"attackerName":"Intercessors","defenderName":"Scarab Swarm","attacks":"20","ws":"3","strength":"4","ap":"1","toughness":"2","save":"6"}}}

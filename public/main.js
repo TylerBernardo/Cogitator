@@ -326,24 +326,34 @@ function woundRoll(s,t){
 }
 
 var currentCdfGraph = null;
-var currentPdfGraph = null;
 
 function createChartFromData(data1,data2,element,type1,type2,subdivisions){
+    var barChartData = []
+    data2[1].forEach(element => {barChartData.push(element);for(var i = 0; i < subdivisions - 1; i++){barChartData.push(0);};})
     var toReturn = new Chart(
         element,
         {
             data:{
                 datasets: [{
+                    type:type2,
+                    data:barChartData,//data2[1],
+                    label:"PDF"
+                },{
+                    label:"CDF",
                     type:type1,
                     data: data1[1],
-                },{
-                    type:type2,
-                    data:data2[1],
+                    pointRadius: data1[0].map(x => ((x * subdivisions) % subdivisions == 0) ? 5 : 0),
+                    pointHitRadius: data1[0].map(x => ((x * subdivisions) % subdivisions == 0) ? 20 : 0)
                 }],
 
                 labels: data1[0]
             },
             options:{
+                interaction: {
+                    intersect: true,
+                    mode: 'index',
+                },
+                maintainAspectRatio: false,
                 scales:{
                     x:{
                         //min:0,
@@ -353,9 +363,6 @@ function createChartFromData(data1,data2,element,type1,type2,subdivisions){
                         beginAtZero: true,
                         ticks:{
                             callback: function(value,index,ticks) {
-                                if(index == ticks.length - 1){
-                                    return (value/subdivisions) + "+"
-                                }
                                 if(value % subdivisions == 0){
                                     return (value/subdivisions)
                                 }
@@ -369,9 +376,23 @@ function createChartFromData(data1,data2,element,type1,type2,subdivisions){
                 },
                plugins:{
                 tooltip: {
+                    position:'nearest',
                     filter: function (tooltipItem, tooltipIndex, tooltipItems, data) {
-                        console.log(tooltipItem)
                         return  tooltipItem.dataIndex % subdivisions == 0;
+                    },
+
+                    callbacks:{
+                        label: function (context){
+                            let label = context.dataset.label || '';
+    
+                            if(label == "CDF"){
+                                return context.label + "+" + ": " + Math.round(context.raw * 1000)/10 + "%"
+                            }
+                            return context.label + ": " + Math.round(context.raw * 1000)/10 + "%"
+                        },
+                        title(context){
+                            return ""
+                        }
                     }
                     
                  }
@@ -387,9 +408,8 @@ function createGraph(){
     //if a graph already exists, destroy it
     if(currentCdfGraph != null){
         currentCdfGraph.destroy()
-        currentPdfGraph.destroy()
     }
-    var formData = new FormData(document.getElementById("simData"))
+    var formData = new FormData(document.getElementById("simDataForm"))
     var data = Object.fromEntries(formData.entries());
     console.log(data)
     var attacks = parseInt(data.fAttacks)
@@ -414,13 +434,13 @@ function createGraph(){
     //var pdfChart = createChartFromData(pdfData,document.getElementById("pdfGraph"),"bar",1)
     //update the internal variables tracking the current graph
     currentCdfGraph = cdfChart;
-    //currentPdfGraph = pdfChart
 }
 
 function saveUnit(){
-    var formData = new FormData(document.getElementById("simData"))
+    var formData = new FormData(document.getElementById("simDataForm"))
     var data = Object.fromEntries(formData.entries());
-    data["unitName"] = prompt("What is the name of this unit?")
+    data["attackerName"] = prompt("What is the name of the attacking unit?")
+    data["defenderName"] = prompt("What is the name of the defending unit?")
     fetch("/set",{
         method:"POST",
         body:JSON.stringify(data),
@@ -442,6 +462,8 @@ function onload(){
     //generate form based on keywords
     var keywordDiv = document.getElementById("keywords")
     for(var k of KEYWORDS){
+        var div = document.createElement('div')
+        div.classList.add("modifierInput")
         var radio = document.createElement("input")
         radio.type = "checkbox";
         radio.name = k;
@@ -449,10 +471,11 @@ function onload(){
         var label = document.createElement("label")
         label.for = k
         label.textContent = k;
-        keywordDiv.appendChild(label);
-        keywordDiv.appendChild(radio);
+        div.appendChild(label);
+        div.appendChild(radio);
+        keywordDiv.appendChild(div)
     }
-    if(document.getElementById("simData").dataset.autofilled == "true"){
+    if(document.getElementById("simDataForm").dataset.autofilled == "true"){
         createGraph();
     }
     //set save button onclick

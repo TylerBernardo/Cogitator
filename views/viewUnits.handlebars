@@ -8,7 +8,7 @@
             <table class = "target">
                 <tr class = "TargetName">
                     <td class = "name" colspan = 2>
-                        <a href = "/load?unitName={{this.unitName}}"><h1>{{this.unitName}}</h1></a>
+                        <a href = "/load?unitName={{this.attackerName}}%5Fvs%5F{{this.defenderName}}"><h1>{{this.defenderName}}</h1></a>
                     </td>
                 </tr>
                 <tr class = "TargetLabels">
@@ -35,6 +35,11 @@
             </table>
             <h3>VS</h3>
             <table>
+                <tr class = "TargetName" >
+                    <td colspan = 5 class = "name aName">
+                        <a href = "/load?unitName={{this.attackerName}}%5Fvs%5F{{this.defenderName}}"><h1>{{this.attackerName}}</h1></a>
+                    </td>
+                </tr>
                 <tr class = "WeaponLabels">
                     <td>
                         <p>WEAPON</p>

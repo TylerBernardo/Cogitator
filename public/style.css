@@ -1,8 +1,105 @@
-td{
-    width:800px;
+#content {
+    padding:10px;
+    min-height:calc(100vh - 58.4px - 88.4px - 20px) !important;
+}
+
+#flexCon{
+    display:flex;
+    flex-direction: row;
+    flex-wrap:wrap;
+}
+
+#simGraphs, #simData{
+    flex: 0 0 auto;
+    width:50%;
+    min-width: 500px;
+}
+
+canvas{
+    width:100%;
     height:auto;
 }
 
-input{
-    margin-right:40px;
+#chartResize{
+    position:relative;
+    margin:auto;
+    width:100%;
+    height:50vh;
+}
+
+#attacker{
+    display:flex;
+    justify-content: space-around;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+#attacker .input{
+    flex:0 0 auto;
+    width:22%;
+}
+
+#defender{
+    display:flex;
+    justify-content: space-around;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+#defender .input{
+    flex:0 0 auto;
+    width:45%;
+}
+
+.input {
+    position: relative;
+}
+
+.input__label {
+  position: absolute;
+  left: 0;
+  top: -10px;
+  padding-left:3px;
+  padding-right:3px;
+  font-weight: bold;
+  line-height: 1.2;
+  transform: scale(.8);
+  background-color: white;
+}
+
+.input__field {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  border: 1px solid;
+  padding: 10px;
+}
+
+#keywords{
+    padding:20px;
+    display:flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+#keywords .modifierInput{
+    flex:0 0 auto;
+    width:23%;
+}
+
+button{
+    padding:20px;
+}
+
+#buttons{
+    display:flex;
+    flex-wrap:wrap;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+#buttons button{
+    flex:0 0 auto;
+    width:25%;
 }

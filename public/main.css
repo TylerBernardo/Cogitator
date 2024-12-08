@@ -52,5 +52,8 @@ h1.navItem{
 }
 
 #content{
-    min-height:calc(100vh - 58.5px - 88.5px - 20px);
+    min-height:calc(100vh - 58.4px - 88.4px);
+    
 }
+
+
