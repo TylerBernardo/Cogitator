@@ -406,12 +406,15 @@ function createChartFromData(data1,data2,element,type1,type2,subdivisions){
 
 function createGraph(){
     //if a graph already exists, destroy it
+    var formData = new FormData(document.getElementById("simDataForm"))
+    var data = Object.fromEntries(formData.entries());
+    if(data.fAP == "" || data.fAttacks == "" || data.fStrength == "" || data.fWS == "" || data.tSave == "" || data.tToughness == ""){
+        alert("Please fill out all required fields")
+        return;
+    }
     if(currentCdfGraph != null){
         currentCdfGraph.destroy()
     }
-    var formData = new FormData(document.getElementById("simDataForm"))
-    var data = Object.fromEntries(formData.entries());
-    console.log(data)
     var attacks = parseInt(data.fAttacks)
     var ws = parseInt(data.fWS)
     var armorSave = Math.min(parseInt(data.tSave) + parseInt(data.fAP),7)
@@ -439,6 +442,10 @@ function createGraph(){
 function saveUnit(){
     var formData = new FormData(document.getElementById("simDataForm"))
     var data = Object.fromEntries(formData.entries());
+    if(data.fAP == "" || data.fAttacks == "" || data.fStrength == "" || data.fWS == "" || data.tSave == "" || data.tToughness == ""){
+        alert("Please fill out all required fields")
+        return;
+    }
     data["attackerName"] = prompt("What is the name of the attacking unit?")
     data["defenderName"] = prompt("What is the name of the defending unit?")
     var keywords = []
@@ -471,7 +478,7 @@ function onload(){
     var keywordDiv = document.getElementById("keywords")
     var toAutoFill = keywordDiv.dataset.toautofill;
     console.log(toAutoFill)
-    if(toAutoFill != undefined){
+    if(toAutoFill != ''){
         toAutoFill = JSON.parse(toAutoFill)
     }else{
         toAutoFill = []
