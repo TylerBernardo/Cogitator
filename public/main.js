@@ -417,7 +417,7 @@ function createGraph(){
     }
     var attacks = parseInt(data.fAttacks)
     var ws = parseInt(data.fWS)
-    var armorSave = Math.min(parseInt(data.tSave) + parseInt(data.fAP),7)
+    var armorSave = Math.min(parseInt(data.tSave) + parseInt(data.fAP), (data.tISave != "") ? parseInt(data.tISave) : 7)
     var toWound = woundRoll(parseInt(data.fStrength),parseInt(data.tToughness))
     //figure out which keywords were selected
     var keywords = []

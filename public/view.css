@@ -79,3 +79,20 @@ table,h3{
 .aName{
     padding:5px;
 }
+
+.invul{
+    background-image: url("shield.png");
+    background-repeat:no-repeat;
+    background-size:cover;
+    width:59px;
+    
+    margin-left:10px;
+    text-align:center;
+}
+
+.invul p{
+    padding-top:20px;
+    padding-bottom:30px;
+    color:#536766;
+    font-weight:bolder;
+}

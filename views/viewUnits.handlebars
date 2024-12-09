@@ -7,7 +7,7 @@
         <div class = "dataCard">
             <table class = "target">
                 <tr class = "TargetName">
-                    <td class = "name" colspan = 2>
+                    <td class = "name" colspan = {{#if this.invul}}3{{else}}2{{/if}}>
                         <a href = "/load?unitName={{this.attackerName}}%5Fvs%5F{{this.defenderName}}"><h1>{{this.defenderName}}</h1></a>
                     </td>
                 </tr>
@@ -18,6 +18,9 @@
                     <td class = "tLabel">
                         <p>SV</p>
                     </td>
+                    {{#if this.invul}}
+                    <td></td>
+                    {{/if}}
                 </tr>
                 <tr class = "TargetStats">
                     <td>
@@ -28,9 +31,17 @@
                     </td>
                     <td>
                         <div class = "tStat">
-                             <p>{{this.save}}</p>
+                             <p>{{this.save}}+</p>
                         </div>
                     </td>
+                    {{#if this.invul}}
+                    <td>
+                        <div class = "invul">
+                            <p>4+</p>
+                        </div>
+                        
+                    </td>
+                    {{/if}}
                 </tr>
             </table>
             <h3>VS</h3>
