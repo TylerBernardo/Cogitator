@@ -58,7 +58,13 @@
                     </td>
                 </tr>   
                 <tr class = "WeaponInfo">
-                    <td></td>
+                    <td>
+                        {{#if this.keywords.length}}
+                            ({{#each this.keywords}}
+                                {{this}}{{#unless @last}}, {{/unless}}
+                            {{/each}})
+                        {{/if}}
+                    </td>
                     <td class = "wStat">
                         {{this.attacks}}
                     </td>

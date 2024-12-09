@@ -441,6 +441,13 @@ function saveUnit(){
     var data = Object.fromEntries(formData.entries());
     data["attackerName"] = prompt("What is the name of the attacking unit?")
     data["defenderName"] = prompt("What is the name of the defending unit?")
+    var keywords = []
+    for(var k of KEYWORDS){
+        if(data.hasOwnProperty(k)){
+            keywords.push(k)
+        }
+    }
+    data["keywords"] = keywords
     fetch("/set",{
         method:"POST",
         body:JSON.stringify(data),
@@ -459,8 +466,16 @@ function onload(){
         createGraph()
         console.timeEnd("makeGraph")
     }
+
     //generate form based on keywords
     var keywordDiv = document.getElementById("keywords")
+    var toAutoFill = keywordDiv.dataset.toautofill;
+    console.log(toAutoFill)
+    if(toAutoFill != undefined){
+        toAutoFill = JSON.parse(toAutoFill)
+    }else{
+        toAutoFill = []
+    }
     for(var k of KEYWORDS){
         var div = document.createElement('div')
         div.classList.add("modifierInput")
@@ -468,6 +483,9 @@ function onload(){
         radio.type = "checkbox";
         radio.name = k;
         radio.value = k;
+        if(toAutoFill.includes(k)){
+            radio.checked = true;
+        }
         var label = document.createElement("label")
         label.for = k
         label.textContent = k;

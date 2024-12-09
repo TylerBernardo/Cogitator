@@ -17,7 +17,7 @@ async function getUnitData(unitName){
     return data.Units[unitName];
 }
 //potentially replace with MongoDB in future if time permits
-async function setUnitData(_attackerName,_defenderName,_attacks,_ws,_strength,_ap,_toughness,_save){
+async function setUnitData(_attackerName,_defenderName,_attacks,_ws,_strength,_ap,_toughness,_save,_keywords){
     var file = await fs.readFile('applicationData.JSON',{encoding:'utf-8'})
     var data = JSON.parse(file);
     var unitToAdd = {
@@ -28,7 +28,8 @@ async function setUnitData(_attackerName,_defenderName,_attacks,_ws,_strength,_a
         strength:_strength,
         ap:_ap,
         toughness:_toughness,
-        save:_save
+        save:_save,
+        keywords:_keywords
     }
     data.Units[_attackerName + "_vs_" + _defenderName] = unitToAdd;
     fs.writeFile('applicationData.JSON',JSON.stringify(data),{encoding:'utf-8'})
@@ -48,6 +49,7 @@ app.get('/', async (req, res) => {
 app.get('/load', async (req,res) => {
     var data = await getUnitData(req.query.unitName)
     data["dataFilled"] = true
+    data["toAutoFill"] = JSON.stringify(data.keywords)
     res.render('index.handlebars',data)
 })
 
@@ -57,7 +59,7 @@ app.get('/units', async (req,res) => {
 
 app.post('/set', async (req,res) => {
     var q = req.body;
-    setUnitData(q.attackerName,q.defenderName,q.fAttacks,q.fWS,q.fStrength,q.fAP,q.tToughness,q.tSave)
+    setUnitData(q.attackerName,q.defenderName,q.fAttacks,q.fWS,q.fStrength,q.fAP,q.tToughness,q.tSave,q.keywords)
 })
 
 app.listen(port, () => {
