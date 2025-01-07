@@ -145,6 +145,9 @@ class BinomialDistribution{
 //works acording to test from https://github.com/tsakim/poibin/blob/master/test_poibin.py
 class PoissonBinomialDist{
     pdfList = [1]
+    std = -1;
+    samples = []
+    h = -1;
     constructor(probs){
         this.probs = probs;
     }
@@ -159,13 +162,69 @@ class PoissonBinomialDist{
             }
             this.pdfList = nextPdfList;
         }
+        //calculate the standard deviation of the distribution
+        var sum = 0;
+        for(var i = 0; i < this.probs.length; i++){
+            sum += (1-this.probs[i]) * this.probs[i]
+        }
+        this.std = Math.sqrt(sum)
         console.log("Done!")
+    }
+
+    contPdf(x,h){
+        if(h == undefined){
+            h = this.h
+        }
+        var frontCoEff = 1/(this.samples.length * h * this.std * Math.sqrt(2*3.1415))
+        var sum = 0;
+        for(var i = 0; i < this.samples.length; i++){
+            sum += Math.exp(-Math.pow((x-this.samples[i]),2)/(2 * Math.pow(h * this.std,2)))
+        }
+        return sum * frontCoEff
     }
 
     pdf(x){
         return this.pdfList[x];
     }
+
+    createContPDF(points){
+        //generate a list of samples to use in aproximating the pdf
+        var counts = []
+        var total = 0;
+        for(var i = 0; i <= this.probs.length; i++){
+            counts[i] = Math.round(points * this.pdf(i))
+            total += counts[i]
+            this.samples = this.samples.concat(Array(counts[i]).fill(i))
+        }
+        //pick an appropriate H value
+        var best = Infinity;
+        var bestH = -1;
+        for(var i = 0.01; i < 1; i += .0001){
+            //pointsToSample.push(i);
+            var averageError = 0;
+            for(var t = 0; t <= this.probs.length; t++){
+                averageError += Math.abs(this.contPdf(t,i) - this.pdf(t))/(this.probs.length+1)
+            }
+            if(averageError < best){
+                best = averageError
+                bestH = i;
+            }
+        }
+        console.log(best)
+        console.log(bestH)
+        this.h = bestH
+    }
+
+    samplePdf(){
+
+    }
 }
+
+var test= new PoissonBinomialDist([.75,.4,.21,.83,.5])
+test.generatePDF();
+test.createContPDF(1000);
+//console.log(test.contPdf(2,.48))
+//console.log(test.pdf(2))
 
 //TODO: invetigate slight difference in CDF between desmos and code
 //create a distribution for a warhammer combat where you roll *numDice* dice that hit on *toHit*, wound on *toWound* versus an armor save of *armorSave*
