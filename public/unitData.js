@@ -46,6 +46,107 @@ var factions = [
     "Tyranids.cat"
 ]
 
+
+
+class Squad{
+    name;
+    count = [];
+    units = [];
+
+    constructor(squadEntry){
+        var unitsRaw = squadEntry.querySelectorAll('selectionEntry[type="model"]')
+        console.log(unitsRaw)
+        console.log(unitsRaw[0])
+        //include all units with a minimum required count
+        //continue adding units until you have hit minimum squad size
+        for(var i = 0; i < unitsRaw.length; i++){
+            this.units.push(new Unit(unitsRaw[i]))
+        }
+        console.log(this.units)
+    }
+}
+
+class Profile{
+    name;
+    range;
+    A;
+    WS;
+    S;
+    AP;
+    D;
+    keywords;
+
+    constructor(profileEntry){
+        this.name = profileEntry.getAttribute("name")
+        profileEntry = profileEntry.querySelector("characteristics")
+        try{
+            this.range = profileEntry.querySelector('characteristic[name="Range"]').firstChild.data
+        }catch{
+            this.range = null;
+        }
+        
+        this.A = profileEntry.querySelector('characteristic[name="A"]').firstChild.data
+        try{
+            this.WS = profileEntry.querySelector('characteristic[name="WS"]').firstChild.data
+        }catch{
+            this.WS = profileEntry.querySelector('characteristic[name="BS"]').firstChild.data
+        }
+       
+        this.S = profileEntry.querySelector('characteristic[name="S"]').firstChild.data
+        this.AP = profileEntry.querySelector('characteristic[name="AP"]').firstChild.data
+        this.D = profileEntry.querySelector('characteristic[name="D"]').firstChild.data
+        this.keywords = profileEntry.querySelector('characteristic[name="Keywords"]').firstChild.data
+    }
+
+}
+
+class Weapon{
+    min = 0;
+    max = 0;
+    name;
+    profiles = []
+
+    constructor(weaponEntry){
+        this.name = weaponEntry.getAttribute("name")
+        var profilesRaw = weaponEntry.querySelectorAll('profile')
+        for(var i = 0; i < profilesRaw.length; i++){
+            this.profiles.push(new Profile(profilesRaw[i]))
+        }
+        this.min = weaponEntry.querySelector('constraint[type="min"]')
+        this.max = weaponEntry.querySelector('constraint[type="max"]')
+    }
+}
+
+class Unit{
+    toughness;
+    save;
+    invul;
+    wounds;
+    modelCount;
+    name;
+    weapons = [];
+
+    constructor(unitEntry,invul){
+        //console.log(unit)
+       
+        var unit = unitEntry.querySelector('profile[typeName="Unit"]')
+        this.name = unit.getAttribute("name")
+        this.invul = invul
+        unit = unit.querySelector('characteristics')
+        this.toughness = unit.querySelector('characteristic[name="T"]').firstChild.data
+        this.save = unit.querySelector('characteristic[name="SV"]').firstChild.data
+        this.wounds = unit.querySelector('characteristic[name="W"]').firstChild.data
+        var weaponsRaw = unitEntry.querySelectorAll('selectionEntry[type="upgrade"]')
+        for(var i = 0; i < weaponsRaw.length; i++){
+            this.weapons.push(new Weapon(weaponsRaw[i]))
+        }
+    }
+
+    printUnit(){
+        console.log(this.name + '\nToughness: ' + this.toughness + "\nSave: " + this.save + "\nInvul: " + this.invul + "\nWounds: " + this.wounds + "\nModel Count: " + this.modelCount)
+    }
+}
+
 var parser = new DOMParser()
 var xmlDoc;
 //console.log("test")
@@ -59,5 +160,9 @@ var xmlDoc;
     console.log(xmlDoc)
     console.log(xmlDoc)
     var units = xmlDoc.querySelectorAll('selectionEntry[type="unit"]')
-    console.log(units[Math.floor(Math.random() * units.length)])
+    var pickedEntry = units[Math.floor(Math.random() * units.length)]
+    console.log(pickedEntry)
+    var testUnit = new Squad(pickedEntry)
+    //testUnit.printUnit()
+    console.log(testUnit)
 })()
