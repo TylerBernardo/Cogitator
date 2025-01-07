@@ -186,7 +186,7 @@ class PoissonBinomialDist{
     pdf(x){
         return this.pdfList[x];
     }
-
+    //https://en.m.wikipedia.org/wiki/Kernel_density_estimation
     createContPDF(points){
         //generate a list of samples to use in aproximating the pdf
         var counts = []
