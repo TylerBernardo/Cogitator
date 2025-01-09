@@ -46,22 +46,27 @@ var factions = [
     "Tyranids.cat"
 ]
 
-
-
 class Squad{
     name;
     count = [];
     units = [];
 
     constructor(squadEntry){
-        var unitsRaw = squadEntry.querySelectorAll('selectionEntry[type="model"]')
-        console.log(unitsRaw)
-        console.log(unitsRaw[0])
-        //include all units with a minimum required count
-        //continue adding units until you have hit minimum squad size
-        for(var i = 0; i < unitsRaw.length; i++){
-            this.units.push(new Unit(unitsRaw[i]))
+        this.name = squadEntry.getAttribute("name")
+        if(squadEntry.getAttribute("type") == "model"){
+            this.count = [1]
+            this.units.push(new Unit(squadEntry))
+        }else{
+            var unitsRaw = squadEntry.querySelectorAll('selectionEntry[type="model"]')
+            console.log(unitsRaw)
+            console.log(unitsRaw[0])
+            //include all units with a minimum required count
+            //continue adding units until you have hit minimum squad size
+            for(var i = 0; i < unitsRaw.length; i++){
+                this.units.push(new Unit(unitsRaw[i]))
+            }
         }
+
         console.log(this.units)
     }
 }
@@ -113,7 +118,13 @@ class Weapon{
             this.profiles.push(new Profile(profilesRaw[i]))
         }
         this.min = weaponEntry.querySelector('constraint[type="min"]')
+        if(this.min != null){
+            this.min = this.min.getAttribute("value")
+        }
         this.max = weaponEntry.querySelector('constraint[type="max"]')
+        if(this.max != null){
+            this.max = this.max.getAttribute("value")
+        }
     }
 }
 
@@ -136,9 +147,23 @@ class Unit{
         this.toughness = unit.querySelector('characteristic[name="T"]').firstChild.data
         this.save = unit.querySelector('characteristic[name="SV"]').firstChild.data
         this.wounds = unit.querySelector('characteristic[name="W"]').firstChild.data
-        var weaponsRaw = unitEntry.querySelectorAll('selectionEntry[type="upgrade"]')
-        for(var i = 0; i < weaponsRaw.length; i++){
-            this.weapons.push(new Weapon(weaponsRaw[i]))
+        //first get all weapons in selection entries, then get them from selectionEntryGroups and make use of the default selection id in the property tag
+        var defaultWeapons = unitEntry.children//.getElementsByTagName("selectionEntries")[0]
+        for(var i = 0; i < defaultWeapons.length; i++){
+            //scan to find the selection entry that is a direct child of the unitEntry
+        }
+        if(defaultWeapons != null){
+            defaultWeapons = defaultWeapons.querySelectorAll('selectionEntry[type="upgrade"]')
+            for(var i = 0; i < defaultWeapons.length; i++){
+                this.weapons.push(new Weapon(defaultWeapons[i]))
+            }
+        }
+        
+        //start parsing the weapon choices
+        var choices = unitEntry.querySelectorAll("selectionEntryGroup")
+        for(var i = 0; i < choices.length; i++){
+            var defaultId = choices[i].getAttribute("defaultSelectionEntryId")
+            this.weapons.push(new Weapon(choices[i].querySelector('selectionEntry[id="' + defaultId + '"]')))
         }
     }
 
@@ -157,10 +182,14 @@ var xmlDoc;
     var factionRes = await fetch(randomFaction)
     var factionText = await factionRes.text()
     xmlDoc = parser.parseFromString(factionText,"text/xml")
+    //console.log(xmlDoc)
     console.log(xmlDoc)
-    console.log(xmlDoc)
-    var units = xmlDoc.querySelectorAll('selectionEntry[type="unit"]')
-    var pickedEntry = units[Math.floor(Math.random() * units.length)]
+    var units = xmlDoc.getElementsByTagName("sharedSelectionEntries")[0].children//.getElementsByTagName('selectionEntry')//.querySelectorAll('selectionEntry[type="unit"],selectionEntry[type="model"]')
+    console.log(units)
+    var randomIndex = Math.floor(Math.random() * units.length)
+    console.log(randomIndex)
+    var pickedEntry = units[randomIndex]
+
     console.log(pickedEntry)
     var testUnit = new Squad(pickedEntry)
     //testUnit.printUnit()
