@@ -50,6 +50,7 @@ class Squad{
     name;
     count = [];
     units = [];
+    min = 0;
 
     constructor(squadEntry){
         this.name = squadEntry.getAttribute("name")
@@ -66,8 +67,28 @@ class Squad{
                 this.units.push(new Unit(unitsRaw[i]))
             }
         }
+        
+        var constraints = squadEntry.querySelector('selectionEntryGroup[name="Squad Members"]')
+        this.min = constraints.querySelector('constraint[type="min"]').getAttribute("value")
 
         console.log(this.units)
+        count = array[this.units.length]
+        //now that we have model profiles built, build up the squad to minimum size.
+        //start with the minimum required models.
+        var total = 0;
+        for(var i = 0; i < this.units.length; i++){
+            this.count[i] = this.units[i].min
+            total += this.count[i]
+        }
+        if(total < this.min){
+            for(var i = 0; i < this.units.length; i++){
+                var maxAdded = this.units[i].max - this.units[i].min
+                var toAdd = Math.min(this.min - total, maxAdded)
+                total+= toAdd
+                this.count[i] += toAdd
+            }
+        }
+        //if that doesnt fill the squad, add models in order listed until min is hit
     }
 }
 
@@ -115,6 +136,9 @@ class Weapon{
         this.name = weaponEntry.getAttribute("name")
         var profilesRaw = weaponEntry.querySelectorAll('profile')
         for(var i = 0; i < profilesRaw.length; i++){
+            if(profilesRaw[i].getAttribute("typeName") == "Abilities"){
+                continue
+            }
             this.profiles.push(new Profile(profilesRaw[i]))
         }
         this.min = weaponEntry.querySelector('constraint[type="min"]')
@@ -136,6 +160,8 @@ class Unit{
     modelCount;
     name;
     weapons = [];
+    min = 0;
+    max = 0;
 
     constructor(unitEntry,invul){
         //console.log(unit)
@@ -148,11 +174,22 @@ class Unit{
         this.save = unit.querySelector('characteristic[name="SV"]').firstChild.data
         this.wounds = unit.querySelector('characteristic[name="W"]').firstChild.data
         //first get all weapons in selection entries, then get them from selectionEntryGroups and make use of the default selection id in the property tag
-        var defaultWeapons = unitEntry.children//.getElementsByTagName("selectionEntries")[0]
-        for(var i = 0; i < defaultWeapons.length; i++){
+        var children = unitEntry.children
+        var defaultWeapons = null//.getElementsByTagName("selectionEntries")[0]
+        var constraints = null; var cFound = false;
+        var found = false;
+        for(var i = 0; i < children.length; i++){
             //scan to find the selection entry that is a direct child of the unitEntry
+            if(children[i].tagName == "selectionEntries"){
+                defaultWeapons = children[i]
+                found = true;
+            }
+            if(children[i].tagName == "constraints"){
+                constraints = children[i]
+                cFound = true;
+            }
         }
-        if(defaultWeapons != null){
+        if(found){
             defaultWeapons = defaultWeapons.querySelectorAll('selectionEntry[type="upgrade"]')
             for(var i = 0; i < defaultWeapons.length; i++){
                 this.weapons.push(new Weapon(defaultWeapons[i]))
@@ -164,6 +201,18 @@ class Unit{
         for(var i = 0; i < choices.length; i++){
             var defaultId = choices[i].getAttribute("defaultSelectionEntryId")
             this.weapons.push(new Weapon(choices[i].querySelector('selectionEntry[id="' + defaultId + '"]')))
+        }
+        //check constraints
+        if(cFound){
+            var minE = constraints.querySelector('constraint[type="min"]')
+            if(minE != null){
+                this.min = minE.getAttribute("value")
+            }
+
+            var maxE = constraints.querySelector('constraint[type="max"]')
+            if(maxE != null){
+                this.max = maxE.getAttribute("value")
+            }
         }
     }
 
