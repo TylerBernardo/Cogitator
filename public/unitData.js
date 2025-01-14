@@ -68,6 +68,10 @@ class Squad{
             }
         }
 
+        if(this.units.length == 0){
+            return
+        }
+
         //check if any datasheet stats are stored in the profiles section of the squad entry
 
         var otherInfo = squadEntry.querySelector('profiles profile[typeName="Unit"]')
@@ -82,12 +86,22 @@ class Squad{
             var constraints = squadEntry.querySelector('selectionEntryGroup')
             //this.min = constraints.querySelector('constraint[type="min"]').getAttribute("value")
             //scan to get the constraints group at the base level
-            constraints = constraints.children;
-            for(var i = 0; i < constraints.length; i++){
-                if(constraints[i].tagName == "constraints"){
-                    this.min = parseInt(constraints[i].querySelector('constraint[type="min"]').getAttribute("value"))
+            if(constraints != null){
+                constraints = constraints.children;
+                for(var i = 0; i < constraints.length; i++){
+                    if(constraints[i].tagName == "constraints"){
+                        var minE = constraints[i].querySelector('constraint[type="min"]')
+                        if(minE == null){
+                            this.min = 0; 
+                            continue;
+                        }
+                        this.min = parseInt(minE.getAttribute("value"))
+                    }
                 }
+            }else{
+                this.min = 0
             }
+           
         }
         
        // console.log(this.units)
@@ -148,6 +162,7 @@ class Profile{
 
 }
 
+//TODO: Figure out if weapons stored in different files are possible to include in datasheets
 class Weapon{
     min = 0;
     max = 0;
@@ -158,7 +173,7 @@ class Weapon{
         this.name = weaponEntry.getAttribute("name")
         var profilesRaw = weaponEntry.querySelectorAll('profile')
         for(var i = 0; i < profilesRaw.length; i++){
-            if(profilesRaw[i].getAttribute("typeName") == "Abilities"){
+            if(profilesRaw[i].getAttribute("typeName") == "Abilities" || profilesRaw[i].getAttribute("typeName") == "Unit"){
                 continue
             }
             this.profiles.push(new Profile(profilesRaw[i]))
@@ -221,7 +236,20 @@ class Unit{
         var choices = unitEntry.querySelectorAll("selectionEntryGroup")
         for(var i = 0; i < choices.length; i++){
             var defaultId = choices[i].getAttribute("defaultSelectionEntryId")
-            this.weapons.push(new Weapon(choices[i].querySelector('selectionEntry[id="' + defaultId + '"]')))
+            if(defaultId == null){
+                defaultId = choices[i].querySelector('selectionEntry')
+                if(defaultId == null){
+                    //HANDLE ALT WEAPON HERE
+                    continue
+                }else{
+                    defaultId = defaultId.getAttribute("id")
+                }
+            }
+            var selectionE = choices[i].querySelector('selectionEntry[id="' + defaultId + '"]')
+            if(selectionE == null){
+                selectionE = choices[i].children[0]
+            }
+            this.weapons.push(new Weapon(selectionE))
         }
         //check constraints
         if(cFound){
@@ -247,26 +275,43 @@ class Unit{
 }
 
 class Codex{
+    name = ""
     url = "";
     units = new Object(null)
 
-    constructor(arg){
+    constructor(arg,_name){
         if(typeof(arg) == "string"){
-            this.url = _url
+            this.url = arg
+            this.name = _name
         }else{
+            if(arg == null){
+                arg = JSON.parse(localStorage.getItem(_name))
+            }
             this.url = arg.url
             this.units = arg.units
+            this.name = arg.name
         }
         
     }
 
+
     async populateUnits(){
+        var localStorageData = localStorage.getItem(this.name)
+        if(localStorageData != null){
+            localStorageData = JSON.parse(localStorageData)
+            this.units = localStorageData.units
+            return
+        }
         var factionRes = await fetch(this.url)
         var factionText = await factionRes.text()
         xmlDoc = parser.parseFromString(factionText,"text/xml")
         //console.log(xmlDoc)
-        var units = xmlDoc.getElementsByTagName("sharedSelectionEntries")[0].children
-        console.log(units)
+        var entries = xmlDoc.getElementsByTagName("sharedSelectionEntries")
+        if(entries.length == 0){
+            return
+        }
+        var units = entries[0].children
+        //console.log(units)
         for(var i = 0; i < units.length; i++){
             this.units[units[i].getAttribute("name")] = new Squad(units[i])
         }
@@ -274,6 +319,18 @@ class Codex{
 
     getUnitNames(){
         return Object.keys(this.units)
+    }
+
+    save(){
+        localStorage.setItem(this.name,JSON.stringify(this))
+    }
+}
+
+async function buildCodicies(){
+    for(var i = 0; i < factions.length; i++){
+        var newCodex = new Codex( URL + encodeURIComponent(factions[i]),factions[i])
+        await newCodex.populateUnits()
+        newCodex.save()
     }
 }
 
@@ -300,10 +357,11 @@ var xmlDoc;
     //testUnit.printUnit()
     console.log(testUnit)
     */
-   var darkAngels = new Codex(randomFaction)
-   await darkAngels.populateUnits()
+   //var darkAngels = new Codex(randomFaction, factions[23])
+   //await darkAngels.populateUnits()
+   await buildCodicies()
+   var darkAngels = new Codex(JSON.parse(localStorage.getItem(factions[23])))
    console.log(darkAngels)
    console.log(darkAngels.getUnitNames())
-   console.log(JSON.stringify(darkAngels))
 })()
 
