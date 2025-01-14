@@ -1,0 +1,89 @@
+<div class = "dataCard">
+            <table class = "target">
+                <tr class = "TargetName">
+                    <td class = "name" colspan = {{#if this.invul}}3{{else}}2{{/if}}>
+                        <a href = "/load?unitName={{this.attackerName}}%5Fvs%5F{{this.defenderName}}"><h1>{{this.defenderName}}</h1></a>
+                    </td>
+                </tr>
+                <tr class = "TargetLabels">
+                    <td class = "tLabel">
+                        <p>T</p>
+                    </td>
+                    <td class = "tLabel">
+                        <p>SV</p>
+                    </td>
+                    {{#if this.invul}}
+                    <td></td>
+                    {{/if}}
+                </tr>
+                <tr class = "TargetStats">
+                    <td>
+                        <div class = "tStat">
+                            <p>{{this.toughness}}</p>
+                        </div>
+                        
+                    </td>
+                    <td>
+                        <div class = "tStat">
+                             <p>{{this.save}}+</p>
+                        </div>
+                    </td>
+                    {{#if this.invul}}
+                    <td>
+                        <div class = "invul">
+                            <p>4+</p>
+                        </div>
+                        
+                    </td>
+                    {{/if}}
+                </tr>
+            </table>
+            <h3>VS</h3>
+            <table>
+                <tr class = "TargetName" >
+                    <td colspan = 5 class = "name aName">
+                        <a href = "/load?unitName={{this.attackerName}}%5Fvs%5F{{this.defenderName}}"><h1>{{this.attackerName}}</h1></a>
+                    </td>
+                </tr>
+                <tr class = "WeaponLabels">
+                    <td>
+                        <p>WEAPON</p>
+                    </td>
+                    <td>
+                        <p>A</p>
+                    </td>
+                    <td>
+                        <p>WS</p>
+                    </td>
+                    <td>
+                        <p>S</p>
+                    </td>
+                    <td>
+                        <p>AP</p>
+                    </td>
+                </tr>   
+                <tr class = "WeaponInfo">
+                    <td>
+                        {{#if this.keywords.length}}
+                            ({{#each this.keywords}}
+                                {{this}}{{#unless @last}}, {{/unless}}
+                            {{/each}})
+                        {{/if}}
+                    </td>
+                    <td class = "wStat">
+                        {{this.attacks}}
+                    </td>
+                    <td class = "wStat">
+                        {{this.ws}}
+                    </td>
+                    <td class = "wStat">
+                        {{this.strength}}
+                    </td>
+                    <td class = "wStat">
+                        {{this.ap}}
+                    </td>
+                </tr>   
+            </table>
+        </div>
+        <br>
+        <br>

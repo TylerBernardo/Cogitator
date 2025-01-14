@@ -334,6 +334,26 @@ async function buildCodicies(){
     }
 }
 
+function createCombatPreview(attacker, defender){
+    var data = {
+        "attackerName":attacker.name,
+        "defenderName":defender.name,
+        "attacks":attacker.units[0].weapons[0].profiles[0].A,
+        "ws":attacker.units[0].weapons[0].profiles[0].WS,
+        "strength":attacker.units[0].weapons[0].profiles[0].S,
+        "ap":attacker.units[0].weapons[0].profiles[0].AP,
+        "toughness":defender.units[0].toughness,
+        "save":defender.units[0].save,
+        "invul":defender.units[0].invul,
+        "keywords":attacker.units[0].weapons[0].profiles[0].keywords
+    }
+
+    var dataCard = Handlebars.templates.dataCard(data)
+
+    var dataCards = document.getElementById("scenarios")
+    dataCards.insertAdjacentHTML("beforeend",dataCard)
+}
+
 var parser = new DOMParser()
 var xmlDoc;
 //console.log("test")
