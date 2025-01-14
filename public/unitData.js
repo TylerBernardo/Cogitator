@@ -59,20 +59,39 @@ class Squad{
             this.units.push(new Unit(squadEntry))
         }else{
             var unitsRaw = squadEntry.querySelectorAll('selectionEntry[type="model"]')
-            console.log(unitsRaw)
-            console.log(unitsRaw[0])
+            //console.log(unitsRaw)
+            //console.log(unitsRaw[0])
             //include all units with a minimum required count
             //continue adding units until you have hit minimum squad size
             for(var i = 0; i < unitsRaw.length; i++){
                 this.units.push(new Unit(unitsRaw[i]))
             }
         }
-        
-        var constraints = squadEntry.querySelector('selectionEntryGroup[name="Squad Members"]')
-        this.min = constraints.querySelector('constraint[type="min"]').getAttribute("value")
 
-        console.log(this.units)
-        count = array[this.units.length]
+        //check if any datasheet stats are stored in the profiles section of the squad entry
+
+        var otherInfo = squadEntry.querySelector('profiles profile[typeName="Unit"]')
+        if(otherInfo != null){
+            this.units[0].updateStats(otherInfo)
+        }
+        
+
+        if(squadEntry.getAttribute("type") == "model"){
+            this.min = 1
+        }else{
+            var constraints = squadEntry.querySelector('selectionEntryGroup')
+            //this.min = constraints.querySelector('constraint[type="min"]').getAttribute("value")
+            //scan to get the constraints group at the base level
+            constraints = constraints.children;
+            for(var i = 0; i < constraints.length; i++){
+                if(constraints[i].tagName == "constraints"){
+                    this.min = parseInt(constraints[i].querySelector('constraint[type="min"]').getAttribute("value"))
+                }
+            }
+        }
+        
+       // console.log(this.units)
+        this.count = new Array(this.units.length)
         //now that we have model profiles built, build up the squad to minimum size.
         //start with the minimum required models.
         var total = 0;
@@ -86,6 +105,9 @@ class Squad{
                 var toAdd = Math.min(this.min - total, maxAdded)
                 total+= toAdd
                 this.count[i] += toAdd
+                if(total >= this.min){
+                    break;
+                }
             }
         }
         //if that doesnt fill the squad, add models in order listed until min is hit
@@ -143,11 +165,11 @@ class Weapon{
         }
         this.min = weaponEntry.querySelector('constraint[type="min"]')
         if(this.min != null){
-            this.min = this.min.getAttribute("value")
+            this.min = parseInt(this.min.getAttribute("value"))
         }
         this.max = weaponEntry.querySelector('constraint[type="max"]')
         if(this.max != null){
-            this.max = this.max.getAttribute("value")
+            this.max = parseInt(this.max.getAttribute("value"))
         }
     }
 }
@@ -165,14 +187,13 @@ class Unit{
 
     constructor(unitEntry,invul){
         //console.log(unit)
-       
+       //console.log(unitEntry)
         var unit = unitEntry.querySelector('profile[typeName="Unit"]')
-        this.name = unit.getAttribute("name")
+        if(unit != null){
+            this.updateStats(unit)
+        }
         this.invul = invul
-        unit = unit.querySelector('characteristics')
-        this.toughness = unit.querySelector('characteristic[name="T"]').firstChild.data
-        this.save = unit.querySelector('characteristic[name="SV"]').firstChild.data
-        this.wounds = unit.querySelector('characteristic[name="W"]').firstChild.data
+        
         //first get all weapons in selection entries, then get them from selectionEntryGroups and make use of the default selection id in the property tag
         var children = unitEntry.children
         var defaultWeapons = null//.getElementsByTagName("selectionEntries")[0]
@@ -206,18 +227,53 @@ class Unit{
         if(cFound){
             var minE = constraints.querySelector('constraint[type="min"]')
             if(minE != null){
-                this.min = minE.getAttribute("value")
+                this.min = parseInt(minE.getAttribute("value"))
             }
 
             var maxE = constraints.querySelector('constraint[type="max"]')
             if(maxE != null){
-                this.max = maxE.getAttribute("value")
+                this.max = parseInt(maxE.getAttribute("value"))
             }
         }
     }
 
-    printUnit(){
-        console.log(this.name + '\nToughness: ' + this.toughness + "\nSave: " + this.save + "\nInvul: " + this.invul + "\nWounds: " + this.wounds + "\nModel Count: " + this.modelCount)
+    updateStats(unit){
+        this.name = unit.getAttribute("name")
+        unit = unit.querySelector('characteristics')
+        this.toughness = unit.querySelector('characteristic[name="T"]').firstChild.data
+        this.save = unit.querySelector('characteristic[name="SV"]').firstChild.data
+        this.wounds = unit.querySelector('characteristic[name="W"]').firstChild.data
+    }
+}
+
+class Codex{
+    url = "";
+    units = new Object(null)
+
+    constructor(arg){
+        if(typeof(arg) == "string"){
+            this.url = _url
+        }else{
+            this.url = arg.url
+            this.units = arg.units
+        }
+        
+    }
+
+    async populateUnits(){
+        var factionRes = await fetch(this.url)
+        var factionText = await factionRes.text()
+        xmlDoc = parser.parseFromString(factionText,"text/xml")
+        //console.log(xmlDoc)
+        var units = xmlDoc.getElementsByTagName("sharedSelectionEntries")[0].children
+        console.log(units)
+        for(var i = 0; i < units.length; i++){
+            this.units[units[i].getAttribute("name")] = new Squad(units[i])
+        }
+    }
+
+    getUnitNames(){
+        return Object.keys(this.units)
     }
 }
 
@@ -227,7 +283,7 @@ var xmlDoc;
 (async () =>{
     var randomFaction = URL + encodeURIComponent(factions[23])//URL + encodeURIComponent(factions[Math.floor(Math.random()*factions.length)])
     console.log(randomFaction)
-    
+    /*
     var factionRes = await fetch(randomFaction)
     var factionText = await factionRes.text()
     xmlDoc = parser.parseFromString(factionText,"text/xml")
@@ -243,4 +299,11 @@ var xmlDoc;
     var testUnit = new Squad(pickedEntry)
     //testUnit.printUnit()
     console.log(testUnit)
+    */
+   var darkAngels = new Codex(randomFaction)
+   await darkAngels.populateUnits()
+   console.log(darkAngels)
+   console.log(darkAngels.getUnitNames())
+   console.log(JSON.stringify(darkAngels))
 })()
+
