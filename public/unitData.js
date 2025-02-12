@@ -274,6 +274,7 @@ class Unit{
     }
 }
 
+//TODO: find way of checking if the book has been updated without just fetching the whole thing
 class Codex{
     name = ""
     url = "";
