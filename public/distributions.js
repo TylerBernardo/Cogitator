@@ -218,10 +218,6 @@ class PoissonBinomialDist{
     }
 }
 
-class GeneralizedPoissonBinomialDist{
-    probs = []
-}
-
 //console.log(test.contPdf(2,.48))
 //console.log(test.pdf(2))
 
