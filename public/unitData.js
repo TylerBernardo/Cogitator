@@ -138,7 +138,9 @@ class Squad{
     }
 
     getAttackerStats(){
-        return this.units[0].getAttackerStats()
+        var attackerStats = this.units[0].getAttackerStats()
+        attackerStats.weaponProfiles.a = attackerStats.weaponProfiles.a * this.count[0]
+        return attackerStats
     }
 
     getDefenderStats(){
@@ -161,7 +163,7 @@ class Profile{
             profileEntry = JSON.parse(profileEntry)
             this.name = profileEntry.name
             this.range = profileEntry.range
-            this.A = profileEntry.A
+            this.A = parseInt(profileEntry.A)
             this.WS = profileEntry.WS
             this.S = profileEntry.S
             this.AP = profileEntry.AP
@@ -176,7 +178,7 @@ class Profile{
                 this.range = null;
             }
             
-            this.A = profileEntry.querySelector('characteristic[name="A"]').firstChild.data
+            this.A = parseInt(profileEntry.querySelector('characteristic[name="A"]').firstChild.data)
             try{
                 this.WS = profileEntry.querySelector('characteristic[name="WS"]').firstChild.data
             }catch{
@@ -200,7 +202,8 @@ class Weapon{
     min = 0;
     max = 0;
     name;
-    profiles = []
+    profiles = [];
+    collective = false;
 
     constructor(weaponEntry){
         if(typeof(weaponEntry) == "string"){
@@ -208,6 +211,7 @@ class Weapon{
             this.min = weaponEntry.min
             this.max = weaponEntry.max
             this.name = weaponEntry.name
+            this.collective = weaponEntry.collective
             for(var profile of weaponEntry.profiles){
                 this.profiles.push(new Profile(JSON.stringify(profile)))
             }
@@ -228,6 +232,7 @@ class Weapon{
             if(this.max != null){
                 this.max = parseInt(this.max.getAttribute("value"))
             }
+            this.collective = "true" == weaponEntry.getAttribute("collective")
         }
     }
 
@@ -296,6 +301,19 @@ class Unit{
                     this.weapons.push(new Weapon(defaultWeapons[i]))
                 }
             }
+
+            //check constraints
+            if(cFound){
+                var minE = constraints.querySelector('constraint[type="min"]')
+                if(minE != null){
+                    this.min = parseInt(minE.getAttribute("value"))
+                }
+
+                var maxE = constraints.querySelector('constraint[type="max"]')
+                if(maxE != null){
+                    this.max = parseInt(maxE.getAttribute("value"))
+                }
+            }
             
             //start parsing the weapon choices
             var choices = unitEntry.querySelectorAll("selectionEntryGroup")
@@ -314,20 +332,13 @@ class Unit{
                 if(selectionE == null){
                     selectionE = choices[i].children[0]
                 }
-                this.weapons.push(new Weapon(selectionE))
-            }
-            //check constraints
-            if(cFound){
-                var minE = constraints.querySelector('constraint[type="min"]')
-                if(minE != null){
-                    this.min = parseInt(minE.getAttribute("value"))
+                var newWeapon = new Weapon(selectionE)
+                if(newWeapon.collective){
+                    newWeapon.min = 1
                 }
+                this.weapons.push(newWeapon)
+            }
 
-                var maxE = constraints.querySelector('constraint[type="max"]')
-                if(maxE != null){
-                    this.max = parseInt(maxE.getAttribute("value"))
-                }
-            }
         }
     }
 
@@ -426,9 +437,10 @@ async function buildCodicies(){
         await newCodex.populateUnits()
         newCodex.save()
     }
+    console.log("done")
 }
 
-function createCombatPreview(attacker, defender){
+function createCombatPreview(attacker, defender,target){
     attacker = attacker.getAttackerStats()
     defender = defender.getDefenderStats()
 
@@ -446,9 +458,10 @@ function createCombatPreview(attacker, defender){
     }
 
     var dataCard = Handlebars.templates.dataCard(data)
-
-    var dataCards = document.getElementById("scenarios")
-    dataCards.insertAdjacentHTML("beforeend",dataCard)
+    if(target == null){
+        target = document.getElementById("scenarios")
+    }
+    target.insertAdjacentHTML("beforeend",dataCard)
 }
 
 var parser = new DOMParser()
@@ -458,9 +471,9 @@ var xmlDoc;
     //var randomFaction = URL + encodeURIComponent(factions[23])//URL + encodeURIComponent(factions[Math.floor(Math.random()*factions.length)])
     //console.log(randomFaction)
     
-    var factionRes = await fetch("https://raw.githubusercontent.com/BSData/wh40k-10e/refs/heads/main/Necrons.cat")
-    var factionText = await factionRes.text()
-    xmlDoc = parser.parseFromString(factionText,"text/xml")
+    //var factionRes = await fetch("https://raw.githubusercontent.com/BSData/wh40k-10e/refs/heads/main/Necrons.cat")
+    //var factionText = await factionRes.text()
+    //xmlDoc = parser.parseFromString(factionText,"text/xml")
     //console.log(xmlDoc)
     console.log(xmlDoc)
     /*
@@ -477,7 +490,7 @@ var xmlDoc;
     */
    //var darkAngels = new Codex(randomFaction, factions[23])
    //await darkAngels.populateUnits()
-   await buildCodicies()
+  // await buildCodicies()
    var necrons = new Codex(null,"Necrons")
    createCombatPreview(necrons.getUnit("C'tan Shard of the Void Dragon"),necrons.getUnit("C'tan Shard of the Deceiver"))
    //var darkAngels = new Codex(JSON.parse(localStorage.getItem(factions[23])))

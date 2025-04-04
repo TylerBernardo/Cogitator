@@ -2,6 +2,32 @@
 
 <body>
 <h1>Load Unit</h1>
+
+<div id = "unitSelection/">
+    <div id = "attackerSelection">
+        <select id = "aFaction">
+            <option value = "">Choose a Faction</option>
+            {{#each Factions}}
+                <option value = "{{this}}">{{this}}</option>
+            {{/each}}
+        </select>
+        <select id = "aUnits"></select>
+    </div>
+    <div id = "defenderSelection">
+            <select id = "dFaction">
+                <option value = "">Choose a Faction</option>
+                {{#each Factions}}
+                    <option value = "{{this}}">{{this}}</option>
+                {{/each}}
+        </select>
+        <select id = "dUnits"></select>
+    </div>
+</div>
+
+<div id = "preview">
+
+</div>
+
 <ul id = "scenarios">
     {{#each Units}}
         {{> dataCard}}
