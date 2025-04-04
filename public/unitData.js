@@ -53,78 +53,96 @@ class Squad{
     min = 0;
 
     constructor(squadEntry){
-        this.name = squadEntry.getAttribute("name")
-        if(squadEntry.getAttribute("type") == "model"){
-            this.count = [1]
-            this.units.push(new Unit(squadEntry))
-        }else{
-            var unitsRaw = squadEntry.querySelectorAll('selectionEntry[type="model"]')
-            //console.log(unitsRaw)
-            //console.log(unitsRaw[0])
-            //include all units with a minimum required count
-            //continue adding units until you have hit minimum squad size
-            for(var i = 0; i < unitsRaw.length; i++){
-                this.units.push(new Unit(unitsRaw[i]))
+        if(typeof(squadEntry) == "string"){
+            squadEntry = JSON.parse(squadEntry)
+            this.name = squadEntry.name
+            this.count = squadEntry.count
+            this.min = squadEntry.min
+            for(var unit of squadEntry.units){
+                this.units.push(new Unit(JSON.stringify(unit)))
             }
-        }
-
-        if(this.units.length == 0){
-            return
-        }
-
-        //check if any datasheet stats are stored in the profiles section of the squad entry
-
-        var otherInfo = squadEntry.querySelector('profiles profile[typeName="Unit"]')
-        if(otherInfo != null){
-            this.units[0].updateStats(otherInfo)
-        }
-        
-
-        if(squadEntry.getAttribute("type") == "model"){
-            this.min = 1
         }else{
-            var constraints = squadEntry.querySelector('selectionEntryGroup')
-            //this.min = constraints.querySelector('constraint[type="min"]').getAttribute("value")
-            //scan to get the constraints group at the base level
-            if(constraints != null){
-                constraints = constraints.children;
-                for(var i = 0; i < constraints.length; i++){
-                    if(constraints[i].tagName == "constraints"){
-                        var minE = constraints[i].querySelector('constraint[type="min"]')
-                        if(minE == null){
-                            this.min = 0; 
-                            continue;
+            this.name = squadEntry.getAttribute("name")
+            if(squadEntry.getAttribute("type") == "model"){
+                this.count = [1]
+                this.units.push(new Unit(squadEntry))
+            }else{
+                var unitsRaw = squadEntry.querySelectorAll('selectionEntry[type="model"]')
+                //console.log(unitsRaw)
+                //console.log(unitsRaw[0])
+                //include all units with a minimum required count
+                //continue adding units until you have hit minimum squad size
+                for(var i = 0; i < unitsRaw.length; i++){
+                    this.units.push(new Unit(unitsRaw[i]))
+                }
+            }
+
+            if(this.units.length == 0){
+                return
+            }
+
+            //check if any datasheet stats are stored in the profiles section of the squad entry
+
+            var otherInfo = squadEntry.querySelector('profiles profile[typeName="Unit"]')
+            if(otherInfo != null){
+                this.units[0].updateStats(otherInfo)
+            }
+            
+
+            if(squadEntry.getAttribute("type") == "model"){
+                this.min = 1
+            }else{
+                var constraints = squadEntry.querySelector('selectionEntryGroup')
+                //this.min = constraints.querySelector('constraint[type="min"]').getAttribute("value")
+                //scan to get the constraints group at the base level
+                if(constraints != null){
+                    constraints = constraints.children;
+                    for(var i = 0; i < constraints.length; i++){
+                        if(constraints[i].tagName == "constraints"){
+                            var minE = constraints[i].querySelector('constraint[type="min"]')
+                            if(minE == null){
+                                this.min = 0; 
+                                continue;
+                            }
+                            this.min = parseInt(minE.getAttribute("value"))
                         }
-                        this.min = parseInt(minE.getAttribute("value"))
+                    }
+                }else{
+                    this.min = 0
+                }
+            
+            }
+            
+        // console.log(this.units)
+            this.count = new Array(this.units.length)
+            //now that we have model profiles built, build up the squad to minimum size.
+            //start with the minimum required models.
+            var total = 0;
+            for(var i = 0; i < this.units.length; i++){
+                this.count[i] = this.units[i].min
+                total += this.count[i]
+            }
+            if(total < this.min){
+                for(var i = 0; i < this.units.length; i++){
+                    var maxAdded = this.units[i].max - this.units[i].min
+                    var toAdd = Math.min(this.min - total, maxAdded)
+                    total+= toAdd
+                    this.count[i] += toAdd
+                    if(total >= this.min){
+                        break;
                     }
                 }
-            }else{
-                this.min = 0
             }
-           
+            //if that doesnt fill the squad, add models in order listed until min is hit
         }
-        
-       // console.log(this.units)
-        this.count = new Array(this.units.length)
-        //now that we have model profiles built, build up the squad to minimum size.
-        //start with the minimum required models.
-        var total = 0;
-        for(var i = 0; i < this.units.length; i++){
-            this.count[i] = this.units[i].min
-            total += this.count[i]
-        }
-        if(total < this.min){
-            for(var i = 0; i < this.units.length; i++){
-                var maxAdded = this.units[i].max - this.units[i].min
-                var toAdd = Math.min(this.min - total, maxAdded)
-                total+= toAdd
-                this.count[i] += toAdd
-                if(total >= this.min){
-                    break;
-                }
-            }
-        }
-        //if that doesnt fill the squad, add models in order listed until min is hit
+    }
+
+    getAttackerStats(){
+        return this.units[0].getAttackerStats()
+    }
+
+    getDefenderStats(){
+        return this.units[0].getDefenderStats()
     }
 }
 
@@ -139,27 +157,42 @@ class Profile{
     keywords;
 
     constructor(profileEntry){
-        this.name = profileEntry.getAttribute("name")
-        profileEntry = profileEntry.querySelector("characteristics")
-        try{
-            this.range = profileEntry.querySelector('characteristic[name="Range"]').firstChild.data
-        }catch{
-            this.range = null;
-        }
+        if(typeof(profileEntry) == "string"){
+            profileEntry = JSON.parse(profileEntry)
+            this.name = profileEntry.name
+            this.range = profileEntry.range
+            this.A = profileEntry.A
+            this.WS = profileEntry.WS
+            this.S = profileEntry.S
+            this.AP = profileEntry.AP
+            this.D = profileEntry.D
+            this.keywords = profileEntry.keywords
+        }else{
+            this.name = profileEntry.getAttribute("name")
+            profileEntry = profileEntry.querySelector("characteristics")
+            try{
+                this.range = profileEntry.querySelector('characteristic[name="Range"]').firstChild.data
+            }catch{
+                this.range = null;
+            }
+            
+            this.A = profileEntry.querySelector('characteristic[name="A"]').firstChild.data
+            try{
+                this.WS = profileEntry.querySelector('characteristic[name="WS"]').firstChild.data
+            }catch{
+                this.WS = profileEntry.querySelector('characteristic[name="BS"]').firstChild.data
+            }
         
-        this.A = profileEntry.querySelector('characteristic[name="A"]').firstChild.data
-        try{
-            this.WS = profileEntry.querySelector('characteristic[name="WS"]').firstChild.data
-        }catch{
-            this.WS = profileEntry.querySelector('characteristic[name="BS"]').firstChild.data
+            this.S = profileEntry.querySelector('characteristic[name="S"]').firstChild.data
+            this.AP = profileEntry.querySelector('characteristic[name="AP"]').firstChild.data
+            this.D = profileEntry.querySelector('characteristic[name="D"]').firstChild.data
+            this.keywords = profileEntry.querySelector('characteristic[name="Keywords"]').firstChild.data
         }
-       
-        this.S = profileEntry.querySelector('characteristic[name="S"]').firstChild.data
-        this.AP = profileEntry.querySelector('characteristic[name="AP"]').firstChild.data
-        this.D = profileEntry.querySelector('characteristic[name="D"]').firstChild.data
-        this.keywords = profileEntry.querySelector('characteristic[name="Keywords"]').firstChild.data
     }
 
+    getStats(){
+        return {name:this.name,a:this.A,ws:this.WS,s:this.S,ap:this.AP,d:this.D,keywords:this.keywords}
+    }
 }
 
 //TODO: Figure out if weapons stored in different files are possible to include in datasheets
@@ -170,22 +203,40 @@ class Weapon{
     profiles = []
 
     constructor(weaponEntry){
-        this.name = weaponEntry.getAttribute("name")
-        var profilesRaw = weaponEntry.querySelectorAll('profile')
-        for(var i = 0; i < profilesRaw.length; i++){
-            if(profilesRaw[i].getAttribute("typeName") == "Abilities" || profilesRaw[i].getAttribute("typeName") == "Unit"){
-                continue
+        if(typeof(weaponEntry) == "string"){
+            weaponEntry = JSON.parse(weaponEntry)
+            this.min = weaponEntry.min
+            this.max = weaponEntry.max
+            this.name = weaponEntry.name
+            for(var profile of weaponEntry.profiles){
+                this.profiles.push(new Profile(JSON.stringify(profile)))
             }
-            this.profiles.push(new Profile(profilesRaw[i]))
+        }else{
+            this.name = weaponEntry.getAttribute("name")
+            var profilesRaw = weaponEntry.querySelectorAll('profile')
+            for(var i = 0; i < profilesRaw.length; i++){
+                if(profilesRaw[i].getAttribute("typeName") == "Abilities" || profilesRaw[i].getAttribute("typeName") == "Unit"){
+                    continue
+                }
+                this.profiles.push(new Profile(profilesRaw[i]))
+            }
+            this.min = weaponEntry.querySelector('constraint[type="min"]')
+            if(this.min != null){
+                this.min = parseInt(this.min.getAttribute("value"))
+            }
+            this.max = weaponEntry.querySelector('constraint[type="max"]')
+            if(this.max != null){
+                this.max = parseInt(this.max.getAttribute("value"))
+            }
         }
-        this.min = weaponEntry.querySelector('constraint[type="min"]')
-        if(this.min != null){
-            this.min = parseInt(this.min.getAttribute("value"))
-        }
-        this.max = weaponEntry.querySelector('constraint[type="max"]')
-        if(this.max != null){
-            this.max = parseInt(this.max.getAttribute("value"))
-        }
+    }
+
+    //for now just use the first profile until a smarter way is thought up
+    //assume the minimum ammount of a weapon is taken
+    getStats(){
+        var profileStats = this.profiles[0].getStats()
+        profileStats.a = profileStats.a * parseInt(this.min)
+        return profileStats
     }
 }
 
@@ -201,66 +252,81 @@ class Unit{
     max = 0;
 
     constructor(unitEntry,invul){
-        //console.log(unit)
-       //console.log(unitEntry)
-        var unit = unitEntry.querySelector('profile[typeName="Unit"]')
-        if(unit != null){
-            this.updateStats(unit)
-        }
-        this.invul = invul
-        
-        //first get all weapons in selection entries, then get them from selectionEntryGroups and make use of the default selection id in the property tag
-        var children = unitEntry.children
-        var defaultWeapons = null//.getElementsByTagName("selectionEntries")[0]
-        var constraints = null; var cFound = false;
-        var found = false;
-        for(var i = 0; i < children.length; i++){
-            //scan to find the selection entry that is a direct child of the unitEntry
-            if(children[i].tagName == "selectionEntries"){
-                defaultWeapons = children[i]
-                found = true;
+        if(typeof(unitEntry) == "string"){
+            unitEntry = JSON.parse(unitEntry)
+            this.toughness = unitEntry.toughness
+            this.save = unitEntry.save
+            this.invul = unitEntry.invul
+            this.wounds = unitEntry.invul
+            this.modelCount = unitEntry.modelCount
+            this.name = unitEntry.name
+            this.min = unitEntry.min
+            this.max = unitEntry.max
+            for(var weapon of unitEntry.weapons){
+                this.weapons.push(new Weapon(JSON.stringify(weapon)))
             }
-            if(children[i].tagName == "constraints"){
-                constraints = children[i]
-                cFound = true;
+        }else{
+            //console.log(unit)
+        //console.log(unitEntry)
+            var unit = unitEntry.querySelector('profile[typeName="Unit"]')
+            if(unit != null){
+                this.updateStats(unit)
             }
-        }
-        if(found){
-            defaultWeapons = defaultWeapons.querySelectorAll('selectionEntry[type="upgrade"]')
-            for(var i = 0; i < defaultWeapons.length; i++){
-                this.weapons.push(new Weapon(defaultWeapons[i]))
-            }
-        }
-        
-        //start parsing the weapon choices
-        var choices = unitEntry.querySelectorAll("selectionEntryGroup")
-        for(var i = 0; i < choices.length; i++){
-            var defaultId = choices[i].getAttribute("defaultSelectionEntryId")
-            if(defaultId == null){
-                defaultId = choices[i].querySelector('selectionEntry')
-                if(defaultId == null){
-                    //HANDLE ALT WEAPON HERE
-                    continue
-                }else{
-                    defaultId = defaultId.getAttribute("id")
+            this.invul = invul
+            
+            //first get all weapons in selection entries, then get them from selectionEntryGroups and make use of the default selection id in the property tag
+            var children = unitEntry.children
+            var defaultWeapons = null//.getElementsByTagName("selectionEntries")[0]
+            var constraints = null; var cFound = false;
+            var found = false;
+            for(var i = 0; i < children.length; i++){
+                //scan to find the selection entry that is a direct child of the unitEntry
+                if(children[i].tagName == "selectionEntries"){
+                    defaultWeapons = children[i]
+                    found = true;
+                }
+                if(children[i].tagName == "constraints"){
+                    constraints = children[i]
+                    cFound = true;
                 }
             }
-            var selectionE = choices[i].querySelector('selectionEntry[id="' + defaultId + '"]')
-            if(selectionE == null){
-                selectionE = choices[i].children[0]
+            if(found){
+                defaultWeapons = defaultWeapons.querySelectorAll('selectionEntry[type="upgrade"]')
+                for(var i = 0; i < defaultWeapons.length; i++){
+                    this.weapons.push(new Weapon(defaultWeapons[i]))
+                }
             }
-            this.weapons.push(new Weapon(selectionE))
-        }
-        //check constraints
-        if(cFound){
-            var minE = constraints.querySelector('constraint[type="min"]')
-            if(minE != null){
-                this.min = parseInt(minE.getAttribute("value"))
+            
+            //start parsing the weapon choices
+            var choices = unitEntry.querySelectorAll("selectionEntryGroup")
+            for(var i = 0; i < choices.length; i++){
+                var defaultId = choices[i].getAttribute("defaultSelectionEntryId")
+                if(defaultId == null){
+                    defaultId = choices[i].querySelector('selectionEntry')
+                    if(defaultId == null){
+                        //HANDLE ALT WEAPON HERE
+                        continue
+                    }else{
+                        defaultId = defaultId.getAttribute("id")
+                    }
+                }
+                var selectionE = choices[i].querySelector('selectionEntry[id="' + defaultId + '"]')
+                if(selectionE == null){
+                    selectionE = choices[i].children[0]
+                }
+                this.weapons.push(new Weapon(selectionE))
             }
+            //check constraints
+            if(cFound){
+                var minE = constraints.querySelector('constraint[type="min"]')
+                if(minE != null){
+                    this.min = parseInt(minE.getAttribute("value"))
+                }
 
-            var maxE = constraints.querySelector('constraint[type="max"]')
-            if(maxE != null){
-                this.max = parseInt(maxE.getAttribute("value"))
+                var maxE = constraints.querySelector('constraint[type="max"]')
+                if(maxE != null){
+                    this.max = parseInt(maxE.getAttribute("value"))
+                }
             }
         }
     }
@@ -272,6 +338,17 @@ class Unit{
         this.save = unit.querySelector('characteristic[name="SV"]').firstChild.data
         this.wounds = unit.querySelector('characteristic[name="W"]').firstChild.data
     }
+
+    getDefenderStats(){
+        return {t:this.toughness,s:this.save,i:this.invul,name:this.name}
+    }
+
+    //for now just use the first weapon
+    getAttackerStats(){
+        return {weaponProfiles:this.weapons[0].getStats(),name:this.name}
+    }
+
+    
 }
 
 //TODO: find way of checking if the book has been updated without just fetching the whole thing
@@ -289,8 +366,10 @@ class Codex{
                 arg = JSON.parse(localStorage.getItem(_name))
             }
             this.url = arg.url
-            this.units = arg.units
             this.name = arg.name
+            for(var unitName in arg.units){
+                this.units[unitName] = new Squad(JSON.stringify(arg.units[unitName]))
+            }
         }
         
     }
@@ -300,7 +379,11 @@ class Codex{
         var localStorageData = localStorage.getItem(this.name)
         if(localStorageData != null){
             localStorageData = JSON.parse(localStorageData)
-            this.units = localStorageData.units
+            this.name = localStorageData.name
+            this.url = localStorageData.url
+            for(var unitName in localStorageData.units){
+                this.units[unitName] = new Squad(JSON.stringify(localStorageData.units[unitName]))
+            }
             return
         }
         var factionRes = await fetch(this.url)
@@ -314,12 +397,18 @@ class Codex{
         var units = entries[0].children
         //console.log(units)
         for(var i = 0; i < units.length; i++){
-            this.units[units[i].getAttribute("name")] = new Squad(units[i])
+            if(units[i].getAttribute("type") == "model" || units[i].getAttribute("type") == "unit"){
+                this.units[units[i].getAttribute("name")] = new Squad(units[i])
+            }
         }
     }
 
     getUnitNames(){
         return Object.keys(this.units)
+    }
+
+    getUnit(name){
+        return this.units[name]
     }
 
     save(){
@@ -328,25 +417,32 @@ class Codex{
 }
 
 async function buildCodicies(){
+    localStorage.clear();
     for(var i = 0; i < factions.length; i++){
-        var newCodex = new Codex( URL + encodeURIComponent(factions[i]),factions[i])
+        if(i == 39){
+            console.log("doing necrons")
+        }
+        var newCodex = new Codex(URL + encodeURIComponent(factions[i]),factions[i].split(".")[0])
         await newCodex.populateUnits()
         newCodex.save()
     }
 }
 
 function createCombatPreview(attacker, defender){
+    attacker = attacker.getAttackerStats()
+    defender = defender.getDefenderStats()
+
     var data = {
         "attackerName":attacker.name,
         "defenderName":defender.name,
-        "attacks":attacker.units[0].weapons[0].profiles[0].A,
-        "ws":attacker.units[0].weapons[0].profiles[0].WS,
-        "strength":attacker.units[0].weapons[0].profiles[0].S,
-        "ap":attacker.units[0].weapons[0].profiles[0].AP,
-        "toughness":defender.units[0].toughness,
-        "save":defender.units[0].save,
-        "invul":defender.units[0].invul,
-        "keywords":attacker.units[0].weapons[0].profiles[0].keywords
+        "attacks":attacker.weaponProfiles.a,
+        "ws":attacker.weaponProfiles.ws,
+        "strength":attacker.weaponProfiles.s,
+        "ap":attacker.weaponProfiles.ap,
+        "toughness":defender.t,
+        "save":defender.s,
+        "invul":defender.i,
+        "keywords":attacker.weaponProfiles.keywords
     }
 
     var dataCard = Handlebars.templates.dataCard(data)
@@ -359,14 +455,15 @@ var parser = new DOMParser()
 var xmlDoc;
 //console.log("test")
 (async () =>{
-    var randomFaction = URL + encodeURIComponent(factions[23])//URL + encodeURIComponent(factions[Math.floor(Math.random()*factions.length)])
-    console.log(randomFaction)
-    /*
-    var factionRes = await fetch(randomFaction)
+    //var randomFaction = URL + encodeURIComponent(factions[23])//URL + encodeURIComponent(factions[Math.floor(Math.random()*factions.length)])
+    //console.log(randomFaction)
+    
+    var factionRes = await fetch("https://raw.githubusercontent.com/BSData/wh40k-10e/refs/heads/main/Necrons.cat")
     var factionText = await factionRes.text()
     xmlDoc = parser.parseFromString(factionText,"text/xml")
     //console.log(xmlDoc)
     console.log(xmlDoc)
+    /*
     var units = xmlDoc.getElementsByTagName("sharedSelectionEntries")[0].children//.getElementsByTagName('selectionEntry')//.querySelectorAll('selectionEntry[type="unit"],selectionEntry[type="model"]')
     console.log(units)
     var randomIndex = Math.floor(Math.random() * units.length)
@@ -381,8 +478,10 @@ var xmlDoc;
    //var darkAngels = new Codex(randomFaction, factions[23])
    //await darkAngels.populateUnits()
    await buildCodicies()
-   var darkAngels = new Codex(JSON.parse(localStorage.getItem(factions[23])))
-   console.log(darkAngels)
-   console.log(darkAngels.getUnitNames())
+   var necrons = new Codex(null,"Necrons")
+   createCombatPreview(necrons.getUnit("C'tan Shard of the Void Dragon"),necrons.getUnit("C'tan Shard of the Deceiver"))
+   //var darkAngels = new Codex(JSON.parse(localStorage.getItem(factions[23])))
+   //console.log(darkAngels)
+   //console.log(darkAngels.getUnitNames())
 })()
 
