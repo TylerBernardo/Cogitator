@@ -52,7 +52,7 @@ class Squad{
     units = [];
     min = 0;
 
-    constructor(squadEntry){
+    constructor(squadEntry,xmlDoc){
         if(typeof(squadEntry) == "string"){
             squadEntry = JSON.parse(squadEntry)
             this.name = squadEntry.name
@@ -65,7 +65,7 @@ class Squad{
             this.name = squadEntry.getAttribute("name")
             if(squadEntry.getAttribute("type") == "model"){
                 this.count = [1]
-                this.units.push(new Unit(squadEntry))
+                this.units.push(new Unit(squadEntry,null,xmlDoc))
             }else{
                 var unitsRaw = squadEntry.querySelectorAll('selectionEntry[type="model"]')
                 //console.log(unitsRaw)
@@ -73,7 +73,7 @@ class Squad{
                 //include all units with a minimum required count
                 //continue adding units until you have hit minimum squad size
                 for(var i = 0; i < unitsRaw.length; i++){
-                    this.units.push(new Unit(unitsRaw[i]))
+                    this.units.push(new Unit(unitsRaw[i],null,xmlDoc))
                 }
             }
 
@@ -256,7 +256,7 @@ class Unit{
     min = 0;
     max = 0;
 
-    constructor(unitEntry,invul){
+    constructor(unitEntry,invul,xmlDoc){
         if(typeof(unitEntry) == "string"){
             unitEntry = JSON.parse(unitEntry)
             this.toughness = unitEntry.toughness
@@ -339,6 +339,37 @@ class Unit{
                 this.weapons.push(newWeapon)
             }
 
+            //handle entry links TODO: Handle units with wargear options hidden in entry links
+            var links = unitEntry.querySelectorAll("entryLink")
+            for(var link of links){
+                //handle individual link
+                var linkTarget = link.getAttribute("targetId")
+                //exclude selection entry groups to avoid crusade info. TODO: Investigate if this is removing any regular game rules
+                if(link.getAttribute("type") == "selectionEntryGroup"){
+                    continue
+                }
+                var target = xmlDoc.querySelector('[id="' + linkTarget + '"]')
+                if(target == null){
+                    console.log(link.getAttribute("name") + "(ID:" + linkTarget + ") could not be found")
+                    continue
+                }
+                //determine which type of object the linked thing is
+                if(target.querySelector("profiles") != null){
+                    //assume this is a weapon
+                    var newWeapon = new Weapon(target)
+                    //check for constraints here
+                    newWeapon.min = link.querySelector('constraint[type="min"]')
+                    if(newWeapon.min != null){
+                        newWeapon.min = parseInt(newWeapon.min.getAttribute("value"))
+                    }
+                    newWeapon.max = link.querySelector('constraint[type="max"]')
+                    if(newWeapon.max != null){
+                        newWeapon.max = parseInt(newWeapon.max.getAttribute("value"))
+                    }
+                    this.weapons.push(newWeapon)
+                }
+            }
+
         }
     }
 
@@ -409,7 +440,7 @@ class Codex{
         //console.log(units)
         for(var i = 0; i < units.length; i++){
             if(units[i].getAttribute("type") == "model" || units[i].getAttribute("type") == "unit"){
-                this.units[units[i].getAttribute("name")] = new Squad(units[i])
+                this.units[units[i].getAttribute("name")] = new Squad(units[i],xmlDoc)
             }
         }
     }
@@ -471,10 +502,9 @@ var xmlDoc;
     //var randomFaction = URL + encodeURIComponent(factions[23])//URL + encodeURIComponent(factions[Math.floor(Math.random()*factions.length)])
     //console.log(randomFaction)
     
-    //var factionRes = await fetch("https://raw.githubusercontent.com/BSData/wh40k-10e/refs/heads/main/Necrons.cat")
-    //var factionText = await factionRes.text()
-    //xmlDoc = parser.parseFromString(factionText,"text/xml")
-    //console.log(xmlDoc)
+    var factionRes = await fetch("https://raw.githubusercontent.com/BSData/wh40k-10e/refs/heads/main/Imperium%20-%20Space%20Marines.cat")
+    var factionText = await factionRes.text()
+    xmlDoc = parser.parseFromString(factionText,"text/xml")
     console.log(xmlDoc)
     /*
     var units = xmlDoc.getElementsByTagName("sharedSelectionEntries")[0].children//.getElementsByTagName('selectionEntry')//.querySelectorAll('selectionEntry[type="unit"],selectionEntry[type="model"]')
